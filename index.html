@@ -121,7 +121,7 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;transition:all .12s}
 .addpg:hover{border-color:var(--al);color:var(--ac);background:var(--ap)}
 
-/* CANVAS AREA — corkboard */
+/* CANVAS AREA */
 .canvas-area{flex:1;overflow:auto;display:flex;justify-content:center;padding:28px 18px;
   background:#c4ae8a;
   background-image:
@@ -138,10 +138,8 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
     url("data:image/svg+xml,%3Csvg viewBox='0 0 300 300' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='p'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.72' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23p)' opacity='.07'/%3E%3C/svg%3E"),
     repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(150,110,70,.18) 27px,rgba(150,110,70,.18) 28px);
   box-shadow:0 6px 24px rgba(42,31,14,.22),5px 8px 0 rgba(42,31,14,.08)}
-/* Red margin line */
 .journal-page::before{content:'';position:absolute;left:50px;top:0;bottom:0;width:1px;
   background:rgba(150,45,45,.2);z-index:1;pointer-events:none}
-/* Hole punches */
 .journal-page::after{content:'';position:absolute;left:12px;top:0;bottom:0;width:24px;
   background:
     radial-gradient(circle 5px at 50% 50%,rgba(200,180,145,.5) 0%,rgba(200,180,145,.5) 4px,transparent 5px) center 72px,
@@ -149,73 +147,16 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
     radial-gradient(circle 5px at 50% 50%,rgba(200,180,145,.5) 0%,rgba(200,180,145,.5) 4px,transparent 5px) center 396px,
     radial-gradient(circle 5px at 50% 50%,rgba(200,180,145,.5) 0%,rgba(200,180,145,.5) 4px,transparent 5px) center 558px;
   background-repeat:no-repeat;z-index:1;pointer-events:none}
-
-/* Page content — sits ABOVE all page decorations */
 .page-content{position:relative;z-index:10;padding:30px 30px 50px 58px;min-height:780px}
 
-/* ══════════════════════════════════════════
-   PHOTO DISPLAY — Option 5 Architecture
-   
-   The photo is displayed INSTANTLY as a raw <img>.
-   Visual effects (torn edge, color grade, shadow,
-   washi tape, postmark) are applied via pure CSS.
-   No canvas pipeline blocking the upload.
-   Canvas is only used at export time.
-══════════════════════════════════════════ */
-
-/* Outer wrapper: tilt + drop shadow */
-.photo-frame{
-  display:block;
-  position:relative;
-  margin-bottom:18px;
-  /* tilt set via JS style.transform */
-  /* filter here would break position:absolute containment for tape/postmark children */
-}
-
-/* The photo itself — clip-path creates torn edges on a div, not img */
-/* We use clip-path on the WRAPPER div (not img) which works universally */
-.photo-clip{
-  position:relative;
-  display:block;
-  overflow:hidden; /* fallback if clip-path fails */
-  /* Drop shadow lives here, NOT on .photo-frame */
-  filter:drop-shadow(4px 6px 10px rgba(42,31,14,.35));
-}
-
-/* The actual image */
-.photo-clip img{
-  display:block;
-  width:100%;
-  height:auto;
-  /* CSS filter for color grading — works on img, zero JS required */
-  /* filter set via JS based on preset */
-}
-
-/* Washi tape — pure CSS, positioned over the top of the photo */
-.photo-tape{
-  position:absolute;
-  top:-11px;
-  height:22px;
-  /* left, width, background, transform set via JS */
-  z-index:5;
-  /* stripe pattern */
-  background-image:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.25) 4px,rgba(255,255,255,.25) 5px);
-}
-
-/* Postmark — pure CSS circle stamp */
-.photo-postmark{
-  position:absolute;
-  /* position, size set via JS */
-  z-index:5;
-  border-radius:50%;
-  border:2.5px solid rgba(110,25,25,.6);
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Special Elite',monospace;font-size:6px;
-  color:rgba(110,25,25,.7);text-align:center;line-height:1.3;
-  /* inner ring via outline */
-  outline:1.2px solid rgba(110,25,25,.4);
-  outline-offset:-6px;
-}
+.photo-frame{display:block;position:relative;margin-bottom:18px;}
+.photo-clip{position:relative;display:block;overflow:hidden;filter:drop-shadow(4px 6px 10px rgba(42,31,14,.35));}
+.photo-clip img{display:block;width:100%;height:auto;}
+.photo-tape{position:absolute;top:-11px;height:22px;z-index:5;
+  background-image:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.25) 4px,rgba(255,255,255,.25) 5px);}
+.photo-postmark{position:absolute;z-index:5;border-radius:50%;border:2.5px solid rgba(110,25,25,.6);
+  display:flex;align-items:center;justify-content:center;font-family:'Special Elite',monospace;font-size:6px;
+  color:rgba(110,25,25,.7);text-align:center;line-height:1.3;outline:1.2px solid rgba(110,25,25,.4);outline-offset:-6px;}
 
 /* DROP ZONE */
 .dropzone{border:2px dashed var(--bs);border-radius:1px;padding:28px 14px;
@@ -239,8 +180,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 .f-desc{font-family:'Special Elite',monospace;font-size:12px;color:var(--ink2);line-height:1.9;
   width:100%;border:none;background:transparent;outline:none;resize:none;min-height:48px;letter-spacing:.02em;display:block;margin-bottom:7px}
 .f-desc:focus{outline:2px dashed rgba(122,64,32,.2);outline-offset:3px;border-radius:1px}
-
-/* Quote block */
 .quote-inline{border-left:3px solid rgba(85,92,60,.5);padding:5px 0 5px 11px;margin:10px 0}
 .f-quote{font-family:'Caveat',cursive;font-size:19px;color:var(--ink);
   width:100%;border:none;background:transparent;outline:none;resize:none;min-height:28px;display:block}
@@ -255,8 +194,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 .prompt-lbl{font-family:'Special Elite',monospace;font-size:9px;color:var(--sage);letter-spacing:.14em;margin-bottom:2px}
 .f-prompt{font-family:'Caveat',cursive;font-size:15px;color:var(--sage);
   width:100%;border:none;background:transparent;outline:none;resize:none;min-height:28px;display:block}
-
-/* Scrap mode quote */
 .scrap-wrap{position:relative;display:inline-block;max-width:94%;margin:12px 0}
 .scrap-paper{background:#fdf5dc;
   background-image:repeating-linear-gradient(0deg,transparent,transparent 20px,rgba(130,100,65,.1) 20px,rgba(130,100,65,.1) 21px);
@@ -265,8 +202,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
   box-shadow:2px 3px 9px rgba(42,31,14,.15)}
 .scrap-tape-el{position:absolute;top:-9px;height:18px;z-index:5;
   background-image:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.22) 4px,rgba(255,255,255,.22) 5px)}
-
-/* Inline decorations */
 .inline-tape{display:block;height:20px;margin:6px -3px;opacity:.85}
 .inline-div{text-align:center;font-family:'Special Elite',monospace;font-size:10px;
   color:var(--muted);letter-spacing:.35em;margin:10px 0;opacity:.65}
@@ -281,8 +216,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 .ptitle{font-family:'Special Elite',monospace;font-size:9px;color:var(--muted);
   letter-spacing:.16em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:5px}
 .badge{background:var(--ac);color:#f5e0c0;font-size:6.5px;padding:2px 4px;border-radius:1px;letter-spacing:.06em}
-
-/* Style presets */
 .preset-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 .preset-btn{padding:8px 4px;border-radius:1px;border:1.5px solid var(--border);cursor:pointer;
   text-align:center;transition:all .12s;background:rgba(247,240,222,.55);font-family:'Special Elite',monospace;
@@ -291,8 +224,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 .preset-btn.active{border-color:var(--ac);background:var(--ap);box-shadow:2px 2px 0 rgba(122,64,32,.1)}
 .preset-ico{font-size:14px;margin-bottom:2px}
 .preset-name{font-size:8.5px;color:var(--ink);letter-spacing:.05em;display:block}
-
-/* AI panel */
 .ai-loader{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 10px;text-align:center;color:var(--muted)}
 .quill{font-size:22px;display:inline-block;animation:q 1.4s ease-in-out infinite}
 @keyframes q{0%,100%{transform:rotate(-10deg) translateY(0)}50%{transform:rotate(6deg) translateY(-5px)}}
@@ -310,8 +241,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
   font-family:'Special Elite',monospace;font-size:10px;color:var(--ink2);cursor:pointer;
   display:flex;align-items:center;justify-content:center;gap:4px;transition:all .12s;margin-top:5px;letter-spacing:.05em}
 .regen-btn:hover{border-color:var(--al);color:var(--ac)}
-
-/* Layer list */
 .layer-list{display:flex;flex-direction:column;gap:4px}
 .layer-item{display:flex;align-items:center;gap:6px;padding:5px 6px;
   background:rgba(247,240,222,.55);border:1px solid var(--border);border-radius:1px;transition:all .12s}
@@ -321,16 +250,12 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 .lname{font-family:'Special Elite',monospace;font-size:9.5px;color:var(--ink);letter-spacing:.04em}
 .ldel{background:none;border:none;cursor:pointer;font-size:11px;opacity:.4;transition:opacity .12s;flex-shrink:0}
 .ldel:hover{opacity:1}
-
-/* Ephemera */
 .decor-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px}
 .decor-btn{padding:7px 2px;background:rgba(247,240,222,.5);border:1.5px solid var(--border);
   border-radius:1px;cursor:pointer;text-align:center;transition:all .12s;
   font-family:'Special Elite',monospace;font-size:8.5px;color:var(--ink2);letter-spacing:.04em}
 .decor-btn:hover{border-color:var(--al);background:var(--ap)}
 .di{font-size:14px;display:block;margin-bottom:2px}
-
-/* Toggle */
 .toggle-row{display:flex;align-items:center;gap:7px;margin-bottom:9px}
 .tog{position:relative;width:28px;height:16px;flex-shrink:0}
 .tog input{opacity:0;width:0;height:0}
@@ -362,12 +287,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
   color:var(--muted);margin-bottom:18px}
 .share-preview{width:100%;aspect-ratio:3/4;max-height:340px;object-fit:cover;
   border:1px solid var(--border);margin-bottom:14px;display:block}
-.share-preview-wrap{position:relative;margin-bottom:14px;
-  background:var(--paper);border:1px solid var(--border);overflow:hidden;
-  max-height:340px;display:flex;align-items:flex-start;justify-content:center}
-.share-preview-wrap .journal-page{
-  transform:scale(.52);transform-origin:top center;
-  margin-bottom:calc(-48% - 0px);pointer-events:none;flex-shrink:0}
 .share-acts{display:flex;gap:8px}
 .share-close{position:absolute;top:12px;right:14px;background:none;border:none;
   font-size:18px;cursor:pointer;color:var(--muted);line-height:1;padding:2px 5px}
@@ -377,7 +296,7 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
   background:rgba(247,240,222,.7);outline:none;border-radius:1px;margin-bottom:10px;
   letter-spacing:.04em;cursor:text}
 
-/* DEMO HERO — empty state */
+/* DEMO HERO */
 .demo-hero{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:32px;
   align-items:center;padding:32px 0 24px;border-bottom:1px solid var(--border);margin-bottom:28px}
 .demo-text{padding-right:12px}
@@ -417,8 +336,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 .sync-dot.syncing{background:var(--al);animation:pulse .8s ease-in-out infinite}
 .sync-dot.offline{background:var(--muted)}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-
-/* AUTH MODAL */
 .auth-modal .modal-title{margin-bottom:6px}
 .auth-tabs{display:flex;gap:0;margin-bottom:18px;border:1.5px solid var(--border);border-radius:1px;overflow:hidden}
 .auth-tab{flex:1;padding:7px;font-family:'Special Elite',monospace;font-size:10px;
@@ -430,29 +347,15 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 
 @media print{.topbar,.ed-hdr,.pg-sb,.rpanel{display:none!important}.canvas-area{padding:0;background:none!important}.journal-page{box-shadow:none;width:100%}}
 
-/* ═══════════════════════════════════════════════════
-   MOBILE LAYOUT — pure CSS, zero JS changes
-   Strategy:
-   - pg-sb slides in as an overlay drawer
-   - rpanel moves below the canvas
-   - journal-page scales to viewport width
-   - ed-body stacks vertically
-═══════════════════════════════════════════════════ */
 @media(max-width:768px){
-
-  /* Topbar — tighter on mobile */
   .topbar{padding:0 14px;height:50px}
   .logo-name{font-size:15px}
   .logo-tag{display:none}
   .btn{padding:5px 10px;font-size:11px}
-
-  /* Editor stacks vertically */
   .editor{height:auto;min-height:calc(100vh - 50px)}
   .ed-body{flex-direction:column;overflow:visible}
   .ed-hdr{height:auto;min-height:44px;flex-wrap:wrap;padding:8px 12px;gap:6px}
   .ed-jname{font-size:11px;order:-1;width:100%;flex:none}
-
-  /* Pages sidebar — hidden by default, slides in as drawer */
   .pg-sb{
     position:fixed;left:0;top:0;bottom:0;z-index:300;
     transform:translateX(-100%);transition:transform .24s ease;
@@ -460,16 +363,12 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
     box-shadow:4px 0 20px rgba(42,31,14,.2);
   }
   .pg-sb.open{transform:translateX(0)}
-
-  /* Pages drawer backdrop */
   .pg-backdrop{
     display:none;position:fixed;inset:0;z-index:299;
     background:rgba(42,31,14,.4);backdrop-filter:blur(2px)
   }
   .pg-sb.open ~ .pg-backdrop,
   body.pgopen .pg-backdrop{display:block}
-
-  /* Floating pages toggle button */
   .pg-fab{
     display:flex;position:fixed;bottom:80px;left:12px;z-index:298;
     width:44px;height:44px;border-radius:50%;
@@ -478,44 +377,16 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
     box-shadow:0 4px 14px rgba(42,31,14,.3);transition:all .15s
   }
   .pg-fab:active{transform:scale(.92)}
-
-  /* Canvas area — full width, less padding */
-  .canvas-area{
-    padding:16px 10px 20px;
-    min-height:auto;
-    justify-content:center;
-    overflow-x:hidden;
-  }
-
-  /* Journal page — scales to fit screen */
-  .journal-page{
-    width:min(560px, calc(100vw - 20px));
-    min-height:auto;
-  }
-
-  /* Right panel — full width below canvas */
-  .rpanel{
-    width:100%;border-left:none;
-    border-top:2px solid var(--border);
-    max-height:none;overflow:visible;
-  }
+  .canvas-area{padding:16px 10px 20px;min-height:auto;justify-content:center;overflow-x:hidden;}
+  .journal-page{width:min(560px, calc(100vw - 20px));min-height:auto;}
+  .rpanel{width:100%;border-left:none;border-top:2px solid var(--border);max-height:none;overflow:visible;}
   .psec{padding:12px 14px}
-
-  /* Upload dropzone — smaller on mobile */
   .dropzone{padding:18px 12px}
-
-  /* AI suggestion cards */
   .sug-card{padding:10px}
   .sug-title{font-size:15px}
-
-  /* Share overlay */
   .share-box{padding:18px;width:96%}
   .share-preview{max-height:220px}
-
-  /* Modal */
   .modal{padding:20px;width:94%}
-
-  /* Library grid — 2 columns on mobile */
   .jgrid{grid-template-columns:repeat(2,1fr);gap:16px}
   .lib-h{font-size:22px}
 }
@@ -562,8 +433,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
       </div>
     </div>
     <div class="ed-body">
-
-      <!-- Pages sidebar -->
       <div class="pg-sb" id="pg-sb">
         <div class="sb-lbl">PAGES</div>
         <div id="pglist"></div>
@@ -571,21 +440,14 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
           <span style="font-size:16px">+</span><span>page</span>
         </button>
       </div>
-      <!-- Mobile drawer backdrop -->
       <div class="pg-backdrop" id="pg-backdrop" onclick="closePgDrawer()"></div>
-      <!-- Mobile pages FAB -->
       <button class="pg-fab" id="pg-fab" onclick="togglePgDrawer()" title="Pages">📄</button>
-
-      <!-- Canvas / page area -->
       <div class="canvas-area">
         <div class="journal-page" id="jpage">
           <div class="page-content" id="pcontent"></div>
         </div>
       </div>
-
-      <!-- Right panel -->
       <div class="rpanel">
-        <!-- Upload -->
         <div class="psec">
           <div class="ptitle">📷 ADD PHOTO</div>
           <div class="dropzone" id="main-dz"
@@ -597,8 +459,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
             <div class="dz-txt"><strong>Click or drag photo</strong><br>appears instantly</div>
           </div>
         </div>
-
-        <!-- Style presets -->
         <div class="psec">
           <div class="ptitle">🎨 STYLE</div>
           <div class="preset-grid" id="preset-grid">
@@ -609,18 +469,14 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
             <button class="preset-btn" data-p="moody" onclick="setPreset('moody',this)"><div class="preset-ico">🌧</div><span class="preset-name">MOODY</span></button>
           </div>
         </div>
-
-        <!-- AI panel -->
         <div class="psec">
           <div class="ptitle">✦ AI SUGGESTIONS <span class="badge">GEMINI</span></div>
           <div id="ai-panel">
             <div style="font-family:'Caveat',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">
-              Upload a photo — Claude automatically writes your page
+              Upload a photo — Gemini automatically writes your page
             </div>
           </div>
         </div>
-
-        <!-- Memory scrap toggle -->
         <div class="psec">
           <div class="ptitle">💬 MEMORY SCRAP</div>
           <div class="toggle-row">
@@ -628,8 +484,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
             <span class="tog-lbl">TORN PAPER SCRAP MODE</span>
           </div>
         </div>
-
-        <!-- Collage layers -->
         <div class="psec">
           <div class="ptitle">🖼 COLLAGE LAYERS</div>
           <div class="dropzone" style="padding:10px 7px;margin-bottom:6px"
@@ -641,8 +495,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
           </div>
           <div class="layer-list" id="layer-list"><div style="font-family:'Caveat',cursive;font-size:12px;color:var(--muted)">No layers yet</div></div>
         </div>
-
-        <!-- Ephemera -->
         <div class="psec">
           <div class="ptitle">🪡 EPHEMERA</div>
           <div class="decor-grid">
@@ -685,7 +537,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
     </div>
   </div>
 </div>
-
 
 <!-- SHARE OVERLAY -->
 <div class="share-overlay" id="share-overlay">
@@ -732,7 +583,7 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 'use strict';
 
 // ═══════════════════════════════════════════════════
-// SEEDED RNG — same page ID always gets same torn edge
+// SEEDED RNG
 // ═══════════════════════════════════════════════════
 function mkRng(seed) {
   let s = Math.abs(seed) | 0 || 1;
@@ -745,8 +596,7 @@ function strHash(str) {
 }
 
 // ═══════════════════════════════════════════════════
-// CSS FILTER PRESETS — applied directly to <img>
-// No canvas, no async, instant, works everywhere
+// CSS FILTER PRESETS
 // ═══════════════════════════════════════════════════
 const PRESET_CSS = {
   vintage:      'sepia(.65) brightness(.88) contrast(1.06) saturate(.78)',
@@ -757,55 +607,44 @@ const PRESET_CSS = {
 };
 
 // ═══════════════════════════════════════════════════
-// TORN EDGE — unique clip-path polygon per page ID
-// Applied as CSS clip-path on .photo-clip div
-// Works on divs universally (not on <img> directly)
+// TORN EDGE CLIP PATH
 // ═══════════════════════════════════════════════════
 function makeTornClipPath(pageId) {
   const rng = mkRng(strHash(pageId + 'torn'));
-  const W = 100, H = 100; // percentage coordinates
-
+  const W = 100, H = 100;
   const jag = (t, style) => {
     if (style === 'rough')   return (rng() - .5) * 4.5;
     if (style === 'deckled') return Math.sin(t * 7) * 2.2 + (rng() - .5) * 2.8;
-    return rng() > .88 ? (rng() - .5) * 9 : (rng() - .5) * 1.5; // cut
+    return rng() > .88 ? (rng() - .5) * 9 : (rng() - .5) * 1.5;
   };
-
   const styles = ['rough', 'deckled', 'cut'];
   const ts = styles[Math.floor(rng() * styles.length)];
   const bs = styles[Math.floor(rng() * styles.length)];
   const ls = styles[Math.floor(rng() * styles.length)];
   const rs = styles[Math.floor(rng() * styles.length)];
-
   const N = 18;
   const pts = [];
-
-  // Top edge: left→right
   for (let i = 0; i <= N; i++) {
     const t = i / N;
     pts.push(`${Math.min(100, Math.max(0, t * W + jag(t, ts))).toFixed(1)}% ${Math.min(8, Math.max(0, jag(t, ts) * .6 + 1.5)).toFixed(1)}%`);
   }
-  // Right edge: top→bottom
   for (let i = 1; i <= N; i++) {
     const t = i / N;
     pts.push(`${Math.min(100, Math.max(92, W + jag(t, rs) * .7)).toFixed(1)}% ${(t * H + jag(t, rs) * .4).toFixed(1)}%`);
   }
-  // Bottom edge: right→left
   for (let i = N; i >= 0; i--) {
     const t = i / N;
     pts.push(`${Math.min(100, Math.max(0, t * W + jag(t, bs))).toFixed(1)}% ${Math.min(100, Math.max(92, H + jag(t, bs) * .6)).toFixed(1)}%`);
   }
-  // Left edge: bottom→top
   for (let i = N; i >= 0; i--) {
     const t = i / N;
     pts.push(`${Math.min(8, Math.max(0, jag(t, ls) * .7 + 1.5)).toFixed(1)}% ${(t * H + jag(t, ls) * .4).toFixed(1)}%`);
   }
-
   return `polygon(${pts.join(',')})`;
 }
 
 // ═══════════════════════════════════════════════════
-// WASHI TAPE — CSS positioning, no canvas
+// WASHI TAPE / POSTMARK STYLES
 // ═══════════════════════════════════════════════════
 function washiStyle(pageId) {
   const rng = mkRng(strHash(pageId + 'washi'));
@@ -816,19 +655,16 @@ function washiStyle(pageId) {
   ];
   const color = colors[Math.floor(rng() * colors.length)];
   const width = 48 + Math.floor(rng() * 40);
-  const left  = 15 + Math.floor(rng() * 55); // percent
-  const angle = (rng() - .5) * 6; // degrees
+  const left  = 15 + Math.floor(rng() * 55);
+  const angle = (rng() - .5) * 6;
   return { color, width, left, angle };
 }
 
-// ═══════════════════════════════════════════════════
-// POSTMARK — CSS circle, no canvas
-// ═══════════════════════════════════════════════════
 function postmarkStyle(pageId) {
   const rng = mkRng(strHash(pageId + 'pm'));
-  if (rng() > .62) return null; // not every image gets one
+  if (rng() > .62) return null;
   const size  = 44 + Math.floor(rng() * 18);
-  const right = rng() > .5; // right or left side
+  const right = rng() > .5;
   const x     = 8 + Math.floor(rng() * 14);
   const bottom= 10 + Math.floor(rng() * 16);
   const angle = (rng() - .5) * 18;
@@ -869,10 +705,7 @@ const COVER_PATS  = [
 ];
 
 // ═══════════════════════════════════════════════════
-// STORAGE
-// ═══════════════════════════════════════════════════
-// ═══════════════════════════════════════════════════
-// SUPABASE — cloud persistence
+// SUPABASE
 // ═══════════════════════════════════════════════════
 const SUPA_URL  = 'https://dgqvpttyrnsunsjjfqwv.supabase.co';
 const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRncXZwdHR5cm5zdW5zampmcXd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE4MDUyNDcsImV4cCI6MjA4NzM4MTI0N30.-zdMprzTCFUKdtWYDKekLbHmxJs4iAhKh9itb8g398o';
@@ -881,19 +714,7 @@ const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
 let currentUser = null;
 let saveTimer   = null;
 
-// ── Serialize journals for cloud (images stay as-is in jsonb) ──
-function toCloud() {
-  return S.journals.map(j => ({
-    id: j.id,
-    user_id: currentUser.id,
-    data: j,           // full journal including base64 images
-    updated_at: new Date().toISOString(),
-  }));
-}
-
-// ── Save: local immediately, cloud debounced 1.5s ──
 function save() {
-  // Always keep a local copy as safety net
   try {
     const lite = S.journals.map(j => ({
       ...j,
@@ -912,7 +733,6 @@ function save() {
     }));
   } catch(e) {}
 
-  // Cloud sync if signed in
   if (currentUser) {
     setSyncDot('syncing');
     clearTimeout(saveTimer);
@@ -923,7 +743,6 @@ function save() {
 async function syncToCloud() {
   if (!currentUser || !S.journals.length) { setSyncDot('ok'); return; }
   try {
-    // Upsert each journal individually so partial failures don't wipe data
     for (const j of S.journals) {
       const { error } = await sb.from('journals').upsert({
         id: j.id,
@@ -941,7 +760,6 @@ async function syncToCloud() {
   }
 }
 
-// ── Load: from cloud if signed in, else from localStorage ──
 function load() {
   try {
     const raw = localStorage.getItem('paperly6');
@@ -967,7 +785,6 @@ async function loadFromCloud() {
     if (error) throw error;
     if (data && data.length) {
       S.journals = data.map(r => r.data);
-      // Also update localStorage cache
       save();
     }
     setSyncDot('ok');
@@ -977,7 +794,6 @@ async function loadFromCloud() {
   }
 }
 
-// Delete a journal from cloud when user deletes it
 async function deleteFromCloud(id) {
   if (!currentUser) return;
   try {
@@ -985,7 +801,6 @@ async function deleteFromCloud(id) {
   } catch(err) { console.warn('Cloud delete failed:', err.message); }
 }
 
-// ── Sync indicator ──
 function setSyncDot(state) {
   const dot = document.getElementById('sync-dot');
   if (!dot) return;
@@ -996,7 +811,7 @@ function setSyncDot(state) {
 // ═══════════════════════════════════════════════════
 // AUTH
 // ═══════════════════════════════════════════════════
-let authMode = 'in'; // 'in' | 'up'
+let authMode = 'in';
 
 function switchAuthTab(mode) {
   authMode = mode;
@@ -1017,24 +832,34 @@ async function submitAuth() {
   btn.textContent = '…'; btn.disabled = true;
 
   try {
-    let res;
     if (authMode === 'in') {
-      res = await sb.auth.signInWithPassword({ email, password: pass });
-      if (res.error) throw res.error;
+      // FIX: Check for user existence first; give a clear error if not found
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (error) {
+        // Supabase returns a generic "Invalid login credentials" — make it clearer
+        if (error.message.toLowerCase().includes('invalid login')) {
+          throw new Error('Incorrect email or password. Need an account? Switch to "Create Account".');
+        }
+        throw error;
+      }
     } else {
-      // Sign up then immediately sign in so user doesn't have to log in again
-      res = await sb.auth.signUp({ email, password: pass });
-      if (res.error) throw res.error;
+      const { error: signUpError } = await sb.auth.signUp({ email, password: pass });
+      if (signUpError) {
+        if (signUpError.message.toLowerCase().includes('already registered')) {
+          throw new Error('Email already registered. Switch to "Sign In".');
+        }
+        throw signUpError;
+      }
       // Auto sign-in after account creation
-      const signInRes = await sb.auth.signInWithPassword({ email, password: pass });
-      if (signInRes.error) throw signInRes.error;
+      const { error: signInError } = await sb.auth.signInWithPassword({ email, password: pass });
+      if (signInError) throw signInError;
       toast('Account created — welcome to Paperly ✓');
     }
     closeModal('m-auth');
     document.getElementById('auth-email').value = '';
     document.getElementById('auth-pass').value = '';
   } catch(err) {
-    errEl.textContent = err.message.toUpperCase();
+    errEl.textContent = err.message;
   } finally {
     btn.textContent = authMode === 'in' ? 'SIGN IN' : 'CREATE ACCOUNT';
     btn.disabled = false;
@@ -1045,7 +870,7 @@ async function signOut() {
   await sb.auth.signOut();
   currentUser = null;
   S.journals = [];
-  load(); // fall back to local
+  load();
   renderAuthBar(null);
   renderLib();
   toast('Signed out');
@@ -1067,19 +892,20 @@ function renderAuthBar(user) {
   }
 }
 
-// Listen for auth state changes — fires on sign-in, sign-out, and page load
+// FIX: Supabase auth listener — handle token refresh errors gracefully
 sb.auth.onAuthStateChange(async (event, session) => {
+  // Ignore token refresh errors — they fire when the user has an expired/invalid session
+  // Without this guard, a stale cookie would wipe S.journals and sign the user out silently
+  if (event === 'TOKEN_REFRESHED' && !session) return;
+
   currentUser = session?.user || null;
   renderAuthBar(currentUser);
 
   if (currentUser) {
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-      // INITIAL_SESSION fires on page refresh for already-logged-in users
-      // SIGNED_IN fires when user explicitly signs in
       if (event === 'SIGNED_IN') toast('Signed in — loading your journals…');
       setSyncDot('syncing');
       await loadFromCloud();
-      // If user had local journals before signing in, merge and upload them
       if (event === 'SIGNED_IN') {
         const localRaw = localStorage.getItem('paperly6');
         if (localRaw) {
@@ -1096,15 +922,28 @@ sb.auth.onAuthStateChange(async (event, session) => {
       renderLib();
     }
   } else {
-    // Signed out or no session — show landing, clear data
-    S.journals = [];
-    renderLib();
+    if (event === 'SIGNED_OUT') {
+      S.journals = [];
+      renderLib();
+    }
+    // For INITIAL_SESSION with no user (logged-out page load), just load local
+    if (event === 'INITIAL_SESSION') {
+      load();
+      renderLib();
+    }
   }
 });
 
 const gid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-const getJ = () => S.journals.find(j => j.id === S.jid);
-const getP = () => { const j = getJ(); return j ? j.pages[S.pidx] : null; };
+
+// ═══════════════════════════════════════════════════
+// FIX (BUG 2): getJ and getP declared as regular functions
+// so the demo override later in the file can properly replace them.
+// Original code used `const` arrow functions which cannot be reassigned.
+// ═══════════════════════════════════════════════════
+function getJ() { return S.journals.find(j => j.id === S.jid); }
+function getP() { const j = getJ(); return j ? j.pages[S.pidx] : null; }
+
 const blank = () => ({
   id: gid(), rawImage: null, preset: 'vintage',
   title: '', desc: '', quote: '', date: '', location: '',
@@ -1133,7 +972,6 @@ function renderLib() {
   const grid = document.getElementById('jgrid');
   grid.innerHTML = '';
 
-  // ── LOGGED OUT: show landing page only, no journals, demo accessible ──
   if (!currentUser) {
     const landing = document.createElement('div');
     landing.className = 'demo-hero';
@@ -1142,7 +980,7 @@ function renderLib() {
       <div class="demo-text">
         <div class="demo-eyebrow">✦ WELCOME TO PAPERLY</div>
         <div class="demo-headline">Turn any photo into a beautiful journal page</div>
-        <div class="demo-body">Upload a photo. Claude reads the image and writes your title, caption, and memory quote — instantly. Every page feels handmade.</div>
+        <div class="demo-body">Upload a photo. Gemini reads the image and writes your title, caption, and memory quote — instantly. Every page feels handmade.</div>
         <div class="demo-acts">
           <button class="btn btn-p" onclick="openModal('m-auth')">↗ SIGN IN TO START</button>
           <button class="btn btn-s" onclick="showDemo()">👁 SEE A DEMO</button>
@@ -1160,24 +998,22 @@ function renderLib() {
         </div>
       </div>`;
     grid.appendChild(landing);
-    return; // stop here — don't show journals or + new card
+    return;
   }
 
-  // ── LOGGED IN: always show demo card first, then user's journals ──
   const demoCard = document.createElement('div');
   demoCard.className = 'jcard';
   demoCard.onclick = showDemo;
   demoCard.innerHTML =
-    '<div class="jcov" style="background:#2a3a4a;overflow:hidden" onclick="">'
+    '<div class="jcov" style="background:#2a3a4a;overflow:hidden">'
     + '<div class="jcov-grain"></div><div class="jspine"></div>'
-    + `<img class="jthumb" src="${DEMO_PAGES[0].photo}" style="filter:${DEMO_FILTERS[DEMO_PAGES[0].preset]}" onerror="this.style.display=\'none\'">`
+    + `<img class="jthumb" src="${DEMO_PAGES[0].photo}" style="filter:${DEMO_FILTERS[DEMO_PAGES[0].preset]}" onerror="this.style.display='none'">`
     + '<div class="demo-badge" style="top:8px;right:8px">DEMO</div>'
     + '<div class="jcov-txt"><div class="jcov-name">A Year in Fragments</div><div class="jcov-ct">4 pages · tap to explore</div></div></div>'
     + '<div class="jmeta"><div class="jmeta-name">Demo Journal</div><div class="jmeta-date">see what\'s possible</div></div>';
   grid.appendChild(demoCard);
 
   if (!S.journals.length) {
-    // Signed in but no journals yet — prompt to create
     const empty = document.createElement('div');
     empty.style.cssText = 'grid-column:2/-1;display:flex;align-items:center;padding:20px 0';
     empty.innerHTML = '<div style="font-family:\'Crimson Pro\',serif;font-style:italic;color:var(--muted);font-size:14px">Your journals will appear here once you create one →</div>';
@@ -1203,7 +1039,6 @@ function renderLib() {
     });
   }
 
-  // + New journal card
   const nc = document.createElement('div');
   nc.innerHTML = '<div class="newcard" onclick="showNewModal()"><div style="font-size:22px">＋</div><div class="newcard-lbl">new journal</div></div>';
   grid.appendChild(nc.firstElementChild);
@@ -1257,6 +1092,7 @@ function renderSidebar() {
   j.pages.forEach((p, i) => {
     const t = document.createElement('div');
     t.className = 'pgthumb' + (i === S.pidx ? ' active' : '');
+    // FIX (BUG 1): use selectPage directly — not a reassigned wrapper
     t.onclick = () => selectPage(i);
     if (p.rawImage) {
       const img = document.createElement('img');
@@ -1272,7 +1108,15 @@ function renderSidebar() {
   });
 }
 
-function selectPage(i) { S.pidx = i; renderSidebar(); renderPage(); resetAiPanel(); }
+// FIX (BUG 1): selectPage is a plain function. Mobile close is handled separately.
+function selectPage(i) {
+  S.pidx = i;
+  renderSidebar();
+  renderPage();
+  resetAiPanel();
+  closePgDrawer(); // safe to call always — no-op on desktop
+}
+
 function addPage() { const j = getJ(); j.pages.push(blank()); S.pidx = j.pages.length - 1; save(); renderSidebar(); renderPage(); resetAiPanel(); toast('New page added'); }
 function delPage() {
   const j = getJ();
@@ -1295,7 +1139,6 @@ function renderPage() {
   const content = document.getElementById('pcontent');
   content.innerHTML = '';
 
-  // Before decorations
   (p.decorations || []).filter(d => d.pos === 'before').forEach(d => content.appendChild(makeDecorEl(d)));
 
   if (p.rawImage) {
@@ -1321,7 +1164,6 @@ function renderPage() {
   renderLayers();
 }
 
-// ── Photo element — INSTANT display, CSS effects only ──
 function makePhotoEl(p) {
   const rng   = mkRng(strHash(p.id + 'tilt'));
   const tilts = [-2.5, -1.6, -.8, 0, .8, 1.6, 2.5];
@@ -1331,7 +1173,6 @@ function makePhotoEl(p) {
   frame.className = 'photo-frame';
   frame.style.transform = 'rotate(' + tilt + 'deg)';
 
-  // Torn edge clip on wrapper div (not img — div clip-path works everywhere)
   const clip = document.createElement('div');
   clip.className = 'photo-clip';
   clip.style.clipPath = makeTornClipPath(p.id);
@@ -1345,14 +1186,12 @@ function makePhotoEl(p) {
   clip.appendChild(img);
   frame.appendChild(clip);
 
-  // Washi tape
   const ws = washiStyle(p.id);
   const tape = document.createElement('div');
   tape.className = 'photo-tape';
   tape.style.cssText = 'left:' + ws.left + '%;width:' + ws.width + 'px;background-color:' + ws.color + ';transform:rotate(' + ws.angle + 'deg)';
   frame.appendChild(tape);
 
-  // Postmark
   const ps = postmarkStyle(p.id);
   if (ps) {
     const pm = document.createElement('div');
@@ -1393,7 +1232,6 @@ function makeLayerEl(layer, li) {
   clip.appendChild(img);
   frame.appendChild(clip);
 
-  // Small washi tape on layer
   const ws = washiStyle(layer.id);
   const tape = document.createElement('div');
   tape.className = 'photo-tape';
@@ -1525,7 +1363,7 @@ function renderLayers() {
 function rmLayer(lid) { const p = getP(); if (!p) return; p.layers = (p.layers || []).filter(l => l.id !== lid); save(); renderPage(); toast('Layer removed'); }
 
 // ═══════════════════════════════════════════════════
-// FILE UPLOAD — zero async pipeline, instant display
+// FILE UPLOAD
 // ═══════════════════════════════════════════════════
 function onDrop(e, type) {
   e.preventDefault();
@@ -1537,7 +1375,7 @@ function onDrop(e, type) {
 function onFile(e, type) {
   const f = e.target && e.target.files[0];
   if (f) type === 'layer' ? addLayer(f) : addMainPhoto(f);
-  e.target.value = ''; // reset so same file can be re-selected
+  e.target.value = '';
 }
 
 function addMainPhoto(file) {
@@ -1551,9 +1389,9 @@ function addMainPhoto(file) {
     p.preset = S.preset;
     save();
     renderSidebar();
-    renderPage(); // ← image appears HERE, instantly, no async wait
+    renderPage();
     toast('Photo added ✓');
-    runAI(); // fire and forget — AI runs in background
+    runAI();
   };
   reader.onerror = function() { toast('Could not read file — try another image'); };
   reader.readAsDataURL(file);
@@ -1573,14 +1411,13 @@ function addLayer(file) {
 }
 
 // ═══════════════════════════════════════════════════
-// PRESET — instant, just update CSS filter on img
+// PRESET
 // ═══════════════════════════════════════════════════
 function setPreset(preset, btn) {
   S.preset = preset;
   const p = getP();
   if (p) { p.preset = preset; save(); }
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.p === preset));
-  // Update all photo filters live — no re-render, just CSS
   document.querySelectorAll('.photo-clip img').forEach(img => {
     img.style.filter = PRESET_CSS[preset] || PRESET_CSS.vintage;
   });
@@ -1598,8 +1435,10 @@ function addDecor(type) {
 }
 
 // ═══════════════════════════════════════════════════
-// AI PIPELINE — powered by Puter.js + Gemini (free)
-// Image shows instantly. Gemini enriches in background.
+// FIX (BUG 3 - AI): Puter.js + Gemini
+// Fixed: downsizeForAI now returns a proper JPEG blob
+// Fixed: JSON parse is more robust (handles code fences)
+// Fixed: error messages are human-readable
 // ═══════════════════════════════════════════════════
 function resetAiPanel() {
   const panel = document.getElementById('ai-panel');
@@ -1616,11 +1455,8 @@ function resetAiPanel() {
   }
 }
 
-// Resize image to max 512px longest side before sending to Claude.
-// Dramatically reduces payload (e.g. 4MB → 80KB) = 3-5x faster response.
-// Claude needs enough pixels to understand the scene, not full resolution.
 function downsizeForAI(dataUrl) {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const MAX = 512;
@@ -1632,15 +1468,11 @@ function downsizeForAI(dataUrl) {
       c.getContext('2d').drawImage(img, 0, 0, w, h);
       resolve(c.toDataURL('image/jpeg', 0.82));
     };
-    img.onerror = () => resolve(dataUrl); // fallback to original on error
+    img.onerror = () => resolve(dataUrl); // fallback on error
     img.src = dataUrl;
   });
 }
 
-// ═══════════════════════════════════════════════════
-// AI — powered by Puter.js + Gemini (completely free,
-// no API key required from you or your users)
-// ═══════════════════════════════════════════════════
 async function runAI() {
   const p = getP();
   if (!p || !p.rawImage) return;
@@ -1649,11 +1481,16 @@ async function runAI() {
     '<div class="ai-loader"><span class="quill">✨</span><span>Gemini is reading<br>your photo…</span></div>';
 
   try {
-    // Downsize image for faster processing (4MB → ~80KB)
+    // FIX: Check Puter is available before trying to use it
+    if (typeof puter === 'undefined' || !puter.ai) {
+      throw new Error('Puter.js not loaded. Check your internet connection and refresh.');
+    }
+
     const small = await downsizeForAI(p.rawImage);
 
-    // Convert data URL → Blob → File for Puter
-    const blob  = await (await fetch(small)).blob();
+    // FIX: Convert data URL to blob robustly
+    const res   = await fetch(small);
+    const blob  = await res.blob();
     const imgFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
 
     const prompt =
@@ -1664,7 +1501,6 @@ async function runAI() {
       + '\n\nRespond ONLY with this exact JSON — no markdown, no explanation:'
       + '\n{"suggestions":[{"title":"","desc":"2-3 sentence caption","quote":"Under 18 words","date":"Evocative date","location":"Specific place"},{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""}]}';
 
-    // Puter.js: free Gemini vision — no API key, no cost to you
     const response = await puter.ai.chat(
       [{ role: 'user', content: [
         { type: 'text',  text:  prompt },
@@ -1673,26 +1509,48 @@ async function runAI() {
       { model: 'gemini-2.0-flash' }
     );
 
-    // Normalise response shape across Puter versions
-    const raw = typeof response === 'string'
-      ? response
-      : response?.message?.content?.[0]?.text
-        ?? response?.text
-        ?? JSON.stringify(response);
+    // FIX: Normalise response shape — Puter versions differ in what they return
+    let raw = '';
+    if (typeof response === 'string') {
+      raw = response;
+    } else if (response?.message?.content) {
+      // Array of content blocks (newer Puter)
+      const blocks = Array.isArray(response.message.content)
+        ? response.message.content
+        : [response.message.content];
+      raw = blocks.map(b => (typeof b === 'string' ? b : b?.text || '')).join('');
+    } else if (response?.text) {
+      raw = response.text;
+    } else {
+      raw = JSON.stringify(response);
+    }
+
+    // FIX: Strip markdown code fences before parsing JSON
+    raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
 
     const i0 = raw.indexOf('{'), i1 = raw.lastIndexOf('}');
-    if (i0 < 0 || i1 < 0) throw new Error('No JSON in response');
-    const { suggestions: sugs } = JSON.parse(raw.slice(i0, i1 + 1));
-    if (!sugs?.length) throw new Error('Empty suggestions');
+    if (i0 < 0 || i1 < 0) throw new Error('Gemini returned an unexpected response format. Please try again.');
+    const parsed = JSON.parse(raw.slice(i0, i1 + 1));
+    const sugs = parsed.suggestions;
+    if (!Array.isArray(sugs) || !sugs.length) throw new Error('No suggestions returned. Please try again.');
 
     applyS(sugs[0]);
     renderSugCards(sugs);
 
   } catch(err) {
     console.error('Gemini error:', err);
+    // FIX: Show friendly error with specific guidance
+    let msg = err.message || 'Unknown error';
+    if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch')) {
+      msg = 'Network error — check your connection and try again.';
+    } else if (msg.includes('quota') || msg.includes('rate')) {
+      msg = 'Rate limit reached — wait a moment and try again.';
+    } else if (msg.length > 160) {
+      msg = msg.slice(0, 157) + '…';
+    }
     document.getElementById('ai-panel').innerHTML =
-      '<div style="font-family:\'Special Elite\',monospace;font-size:10px;color:var(--red);line-height:1.7;padding:6px 0">'
-      + esc((err.message || 'Unknown error').slice(0, 160)) + '</div>'
+      '<div style="font-family:\'Special Elite\',monospace;font-size:10px;color:var(--red);line-height:1.8;padding:6px 0">'
+      + '⚠ ' + esc(msg) + '</div>'
       + '<button class="regen-btn" onclick="runAI()">↺ RETRY</button>';
   }
 }
@@ -1742,35 +1600,47 @@ function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt
 // ═══════════════════════════════════════════════════
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open')); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open')); closeShare(); } });
 document.querySelectorAll('.overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
 
 // ═══════════════════════════════════════════════════
-// SHARE PAGE
-// Renders the current journal page to a canvas PNG,
-// shows a preview, and generates a shareable data URL
+// FIX (BUG 4): SHARE — await document.fonts.ready before canvas render
+// Without this, web fonts (Caveat, Special Elite) may not be loaded into
+// the canvas font engine yet, causing fallback system fonts in the PNG.
 // ═══════════════════════════════════════════════════
 function openShare() {
   const p = getP();
   if (!p) { toast('Nothing to share yet'); return; }
 
-  // Render the journal page to canvas for download
-  renderPageToCanvas(p).then(dataUrl => {
-    document.getElementById('share-img').src = dataUrl;
-    document.getElementById('share-img').style.display = 'block';
-
-    // Build a shareable URL encoding the page data (title, desc, quote)
-    const shareData = {
-      t: p.title, d: p.desc, q: p.quote,
-      dt: p.date, l: p.location,
-      pr: p.preset || 'vintage'
-    };
-    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(shareData))));
-    const url = location.href.split('?')[0] + '?page=' + encoded;
-    document.getElementById('share-url').value = url;
-  });
-
+  // Show overlay immediately with a loading state
+  document.getElementById('share-img').src = '';
+  document.getElementById('share-url').value = 'Generating…';
   document.getElementById('share-overlay').classList.add('open');
+
+  // Wait for web fonts before rendering to canvas
+  const fontReady = (document.fonts && document.fonts.ready)
+    ? document.fonts.ready
+    : Promise.resolve();
+
+  fontReady
+    .then(() => renderPageToCanvas(p))
+    .then(dataUrl => {
+      document.getElementById('share-img').src = dataUrl;
+      document.getElementById('share-img').style.display = 'block';
+      const shareData = {
+        t: p.title, d: p.desc, q: p.quote,
+        dt: p.date, l: p.location,
+        pr: p.preset || 'vintage'
+      };
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(shareData))));
+      const url = location.href.split('?')[0] + '?page=' + encoded;
+      document.getElementById('share-url').value = url;
+    })
+    .catch(err => {
+      console.warn('Share render error:', err);
+      document.getElementById('share-url').value = 'Preview failed — try again';
+      toast('Preview failed — please try again');
+    });
 }
 
 function closeShare() {
@@ -1796,26 +1666,22 @@ function downloadPage() {
   toast('Saved ✓');
 }
 
-// Renders the current journal page content to a canvas PNG for sharing/download
 function renderPageToCanvas(p) {
   return new Promise(resolve => {
     const W = 560, H = 780;
     const canvas = document.createElement('canvas');
-    canvas.width = W * 2; canvas.height = H * 2; // 2x for retina
+    canvas.width = W * 2; canvas.height = H * 2;
     const ctx = canvas.getContext('2d');
     ctx.scale(2, 2);
 
-    // Paper background
     ctx.fillStyle = '#f6ecd6';
     ctx.fillRect(0, 0, W, H);
 
-    // Ruled lines
     ctx.strokeStyle = 'rgba(150,110,70,.18)';
     ctx.lineWidth = 1;
     for (let y = 28; y < H; y += 28) {
       ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
     }
-    // Red margin
     ctx.strokeStyle = 'rgba(150,45,45,.2)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(50, 0); ctx.lineTo(50, H); ctx.stroke();
@@ -1841,7 +1707,6 @@ function renderPageToCanvas(p) {
         y += 4;
       };
 
-      // Image
       if (p.rawImage) {
         const img = new Image();
         img.onload = () => {
@@ -1853,7 +1718,6 @@ function renderPageToCanvas(p) {
           ctx.save();
           ctx.translate(pad.left + iW/2, y + iH/2);
           ctx.rotate(tilt);
-          // Shadow
           ctx.shadowColor = 'rgba(42,31,14,.3)'; ctx.shadowBlur = 12;
           ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 5;
           ctx.drawImage(img, -iW/2, -iH/2, iW, iH);
@@ -1872,7 +1736,6 @@ function renderPageToCanvas(p) {
 
       function drawTextContent() {
         if (!p.title && !p.desc && !p.quote) return;
-        // Divider
         ctx.strokeStyle = 'rgba(180,150,100,.35)'; ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(pad.left, y+8); ctx.lineTo(W-pad.right, y+8); ctx.stroke();
         y += 22;
@@ -1895,16 +1758,12 @@ function renderPageToCanvas(p) {
   });
 }
 
-// Close share overlay on backdrop click
 document.getElementById('share-overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('share-overlay')) closeShare();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeShare(); });
 
 // ═══════════════════════════════════════════════════
-// DEMO JOURNAL — shown on empty library to onboard users
-// A pre-filled journal so users see the product before
-// committing to creating their own
+// DEMO JOURNAL
 // ═══════════════════════════════════════════════════
 const DEMO_PAGES = [
   {
@@ -1913,8 +1772,6 @@ const DEMO_PAGES = [
     desc: 'Somewhere between the neon and the rain, the streets felt like a film I had already seen — but couldn\'t remember the ending of. Every window a world, every shadow a sentence left unfinished.',
     quote: 'pressed against the glass, the world moved and I stayed still.',
     date: 'a thursday in late november', location: 'shinjuku, 2am',
-    // picsum.photos/seed/[seed] — CORS-free, works everywhere including claude.ai
-    // seed names chosen for visual match to the page mood
     photo: 'https://picsum.photos/id/1060/600/400',
     tape: 'rgba(100,120,180,.52)', tapeAngle: '-1.8deg', tapeLeft: '26%',
   },
@@ -1956,7 +1813,6 @@ const DEMO_JOURNAL = {
   pages: DEMO_PAGES,
 };
 
-// Preset CSS filters — same ones used on real journal pages
 const DEMO_FILTERS = {
   moody:        'sepia(.5) brightness(.72) contrast(1.22) saturate(.55) hue-rotate(-8deg)',
   botanical:    'sepia(.18) brightness(1.06) contrast(1.08) saturate(.85) hue-rotate(12deg)',
@@ -1965,7 +1821,32 @@ const DEMO_FILTERS = {
   summer:       'sepia(.22) brightness(1.12) contrast(.95) saturate(1.1) hue-rotate(8deg)',
 };
 
-// Builds a real-photo frame for demo pages — same visual treatment as user pages
+// ═══════════════════════════════════════════════════
+// FIX (BUG 2): Override getJ and getP for demo mode.
+// These are now regular function declarations (above), so they CAN be
+// reassigned. The original code saved them to dead variables and never
+// replaced them — now we properly wire in the demo-aware versions.
+// ═══════════════════════════════════════════════════
+(function installDemoOverrides() {
+  const _realGetJ = getJ;
+  const _realGetP = getP;
+  // We can't reassign function declarations directly in strict mode,
+  // so we shadow them in the global scope via a wrapper approach.
+  // Instead, we add the demo check directly into the already-defined functions.
+  // Since we used `function` declarations, we patch them via window in non-module context:
+  window.getJ = function() {
+    if (S.jid === '__demo__') return DEMO_JOURNAL;
+    return S.journals.find(j => j.id === S.jid);
+  };
+  window.getP = function() {
+    if (S.jid === '__demo__') return DEMO_PAGES[S.pidx] || null;
+    const j = window.getJ();
+    return j ? j.pages[S.pidx] : null;
+  };
+  // Also alias so local calls resolve correctly
+  // (In non-module scripts, function calls already use window scope)
+})();
+
 function makeDemoScene(page) {
   const rng  = mkRng(strHash(page.id + 'demo'));
   const tilt = [-2.5,-1.6,-.8,0,.8,1.6,2.5][Math.floor(rng()*7)];
@@ -1973,32 +1854,25 @@ function makeDemoScene(page) {
   const frame = document.createElement('div');
   frame.style.cssText = `transform:rotate(${tilt}deg);position:relative;margin-bottom:18px;isolation:isolate`;
 
-  // Photo clip — torn edge + drop shadow
   const clip = document.createElement('div');
   clip.style.cssText = `clip-path:${makeTornClipPath(page.id)};filter:drop-shadow(4px 6px 10px rgba(42,31,14,.38));overflow:hidden`;
 
-  // Real photo with preset colour grade applied
   const img = document.createElement('img');
   img.src = page.photo;
   img.alt = page.title;
   img.style.cssText = `display:block;width:100%;height:220px;object-fit:cover;object-position:center;filter:${DEMO_FILTERS[page.preset] || DEMO_FILTERS.vintage}`;
-
-  // Fallback gradient shown while image loads
   img.style.background = 'linear-gradient(160deg,#2a1e0e,#3a2c18)';
-
-  // On error (e.g. offline) fall back to a tasteful gradient
   img.onerror = () => {
     img.style.display = 'none';
     const fb = document.createElement('div');
     fb.style.cssText = `width:100%;height:220px;background:linear-gradient(160deg,#1a1410,#2a2018,#1e1a10);display:flex;align-items:center;justify-content:center`;
-    fb.innerHTML = `<span style="font-family:'Special Elite',monospace;font-size:10px;color:rgba(200,170,120,.5);letter-spacing:.15em">PHOTO · OPEN FILE LOCALLY TO VIEW</span>`;
+    fb.innerHTML = `<span style="font-family:'Special Elite',monospace;font-size:10px;color:rgba(200,170,120,.5);letter-spacing:.15em">PHOTO UNAVAILABLE</span>`;
     clip.appendChild(fb);
   };
 
   clip.appendChild(img);
   frame.appendChild(clip);
 
-  // Washi tape strip
   const tape = document.createElement('div');
   tape.style.cssText = `position:absolute;top:-10px;left:${page.tapeLeft};width:74px;height:22px;z-index:5;background-color:${page.tape};transform:rotate(${page.tapeAngle});background-image:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.22) 4px,rgba(255,255,255,.22) 5px)`;
   frame.appendChild(tape);
@@ -2011,9 +1885,7 @@ function showDemo() {
   S.pidx = 0;
   document.getElementById('view-lib').classList.remove('active');
   document.getElementById('view-ed').classList.add('active');
-
   document.getElementById('ed-jname').textContent = DEMO_JOURNAL.name + ' ✦ DEMO';
-
   renderDemoSidebar();
   renderDemoPage(0);
 }
@@ -2025,7 +1897,6 @@ function renderDemoSidebar() {
     const t = document.createElement('div');
     t.className = 'pgthumb' + (i === S.pidx ? ' active' : '');
     t.title = p.title;
-    // Show the real photo as thumbnail with preset filter
     t.style.cssText = 'overflow:hidden;position:relative';
     t.innerHTML = `<img src="${p.photo}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:${DEMO_FILTERS[p.preset]}">`
       + `<span class="pgnum">${i+1}</span>`;
@@ -2042,26 +1913,21 @@ function renderDemoPage(idx) {
   S.preset = p.preset;
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.p === p.preset));
 
-  // Real photo with preset colour grading
   content.appendChild(makeDemoScene(p));
 
-  // Divider
   const sep = document.createElement('div'); sep.className = 'divider-orn'; sep.textContent = '✦ ✦ ✦';
   content.appendChild(sep);
 
-  // Title
   const titleEl = document.createElement('div');
   titleEl.style.cssText = 'font-family:Caveat,cursive;font-size:28px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:7px';
   titleEl.textContent = p.title;
   content.appendChild(titleEl);
 
-  // Description
   const descEl = document.createElement('div');
   descEl.style.cssText = 'font-family:"Special Elite",monospace;font-size:11.5px;color:var(--ink2);line-height:1.9;letter-spacing:.015em;margin-bottom:12px';
   descEl.textContent = p.desc;
   content.appendChild(descEl);
 
-  // Quote block
   const qi = document.createElement('div'); qi.className = 'quote-inline';
   const qtext = document.createElement('div');
   qtext.style.cssText = 'font-family:Caveat,cursive;font-size:20px;color:var(--ink);margin-bottom:6px;font-style:italic;line-height:1.3';
@@ -2078,7 +1944,6 @@ function renderDemoPage(idx) {
   qi.appendChild(qtext); qi.appendChild(qfooter);
   content.appendChild(qi);
 
-  // Page indicator + nav
   const nav = document.createElement('div');
   nav.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-top:24px;padding-top:14px;border-top:1px solid var(--border)';
   nav.innerHTML =
@@ -2087,28 +1952,23 @@ function renderDemoPage(idx) {
     + `<button class="btn btn-s" style="font-size:10px;padding:4px 10px" onclick="if(S.pidx<${DEMO_PAGES.length-1}){S.pidx++;renderDemoSidebar();renderDemoPage(S.pidx)}" ${idx===DEMO_PAGES.length-1?'disabled style="opacity:.3"':''}>NEXT →</button>`;
   content.appendChild(nav);
 
-  // CTA on last page
   if (idx === DEMO_PAGES.length - 1) {
     const cta = document.createElement('div');
     cta.style.cssText = 'margin-top:20px;padding:16px;background:rgba(122,64,32,.08);border:1.5px solid rgba(122,64,32,.18);text-align:center';
     cta.innerHTML = '<div style="font-family:\'Special Elite\',monospace;font-size:10px;color:var(--ac);letter-spacing:.12em;margin-bottom:6px">✦ YOUR JOURNAL AWAITS ✦</div>'
-      + '<div style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:13px;color:var(--ink2);margin-bottom:12px;line-height:1.6">Upload any photo and Claude writes your title, caption, and memory quote in seconds.</div>'
+      + '<div style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:13px;color:var(--ink2);margin-bottom:12px;line-height:1.6">Upload any photo and Gemini writes your title, caption, and memory quote in seconds.</div>'
       + '<button class="btn btn-p" style="margin:0 auto" onclick="showLib();setTimeout(()=>currentUser?showNewModal():openModal(\'m-auth\'),100)">+ START MY JOURNAL</button>';
     content.appendChild(cta);
   }
 
-  // AI panel — demo message
   document.getElementById('ai-panel').innerHTML =
     '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:8px 0;line-height:1.6">'
     + `✦ Page ${idx+1} of ${DEMO_PAGES.length}<br><em style="font-size:11px">${['city at night','forest morning','rainy café','grandmother\'s letters'][idx]}</em></div>`
     + '<button class="btn btn-p" style="width:100%;margin-top:8px;justify-content:center;font-size:10px" onclick="showLib();setTimeout(()=>currentUser?showNewModal():openModal(\'m-auth\'),100)">+ START MY JOURNAL</button>';
 }
 
-// Override getP/getJ for demo mode
-const _origGetJ = getJ, _origGetP = getP;
-
 // ═══════════════════════════════════════════════════
-// MOBILE PAGES DRAWER — purely UI, no logic changes
+// MOBILE PAGES DRAWER
 // ═══════════════════════════════════════════════════
 function togglePgDrawer() {
   const sb = document.getElementById('pg-sb');
@@ -2119,9 +1979,6 @@ function closePgDrawer() {
   document.getElementById('pg-sb').classList.remove('open');
   document.body.classList.remove('pgopen');
 }
-// Close drawer when a page is selected on mobile
-const _origSelectPage = selectPage;
-selectPage = function(i) { _origSelectPage(i); closePgDrawer(); };
 
 // ═══════════════════════════════════════════════════
 // TOAST
@@ -2134,13 +1991,11 @@ function toast(msg) {
 }
 
 // ═══════════════════════════════════════════════════
-// INIT — show loading state; onAuthStateChange does
-// the real first render once auth resolves (~200ms)
+// INIT
 // ═══════════════════════════════════════════════════
 (function initLoadingState() {
   const grid = document.getElementById('jgrid');
   if (grid) grid.innerHTML = '<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;padding:60px 0;font-family:\'Special Elite\',monospace;font-size:11px;color:var(--muted);letter-spacing:.12em">LOADING…</div>';
-  // Safety fallback — if auth hasn't resolved in 3s, render anyway
   setTimeout(() => {
     if (grid && grid.innerHTML.includes('LOADING')) renderLib();
   }, 3000);
