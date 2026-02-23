@@ -154,6 +154,9 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 .photo-clip img{display:block;width:100%;height:auto;}
 .photo-tape{position:absolute;top:-11px;height:22px;z-index:5;
   background-image:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.25) 4px,rgba(255,255,255,.25) 5px);}
+.decor-sticker:hover{outline:1.5px dashed rgba(122,64,32,.35);outline-offset:4px;border-radius:2px}
+.decor-sticker:active{cursor:grabbing!important}
+
 .photo-postmark{position:absolute;z-index:5;border-radius:50%;border:2.5px solid rgba(110,25,25,.6);
   display:flex;align-items:center;justify-content:center;font-family:'Special Elite',monospace;font-size:6px;
   color:rgba(110,25,25,.7);text-align:center;line-height:1.3;outline:1.2px solid rgba(110,25,25,.4);outline-offset:-6px;}
@@ -478,7 +481,7 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
           </div>
         </div>
         <div class="psec">
-          <div class="ptitle">💬 MEMORY SCRAP</div>
+          <div class="ptitle"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid var(--muted);border-radius:2px;vertical-align:middle;margin-right:4px;position:relative;top:-1px"></span>MEMORY SCRAP</div>
           <div class="toggle-row">
             <label class="tog"><input type="checkbox" id="scrap-tog" onchange="toggleScrap(this.checked)"><span class="tslider"></span></label>
             <span class="tog-lbl">TORN PAPER SCRAP MODE</span>
@@ -894,8 +897,6 @@ function renderAuthBar(user) {
 
 // FIX: Supabase auth listener — handle token refresh errors gracefully
 sb.auth.onAuthStateChange(async (event, session) => {
-  // Ignore token refresh errors — they fire when the user has an expired/invalid session
-  // Without this guard, a stale cookie would wipe S.journals and sign the user out silently
   if (event === 'TOKEN_REFRESHED' && !session) return;
 
   currentUser = session?.user || null;
@@ -903,32 +904,36 @@ sb.auth.onAuthStateChange(async (event, session) => {
 
   if (currentUser) {
     if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-      if (event === 'SIGNED_IN') toast('Signed in — loading your journals…');
+      if (event === 'SIGNED_IN') toast('Signed in — syncing journals…');
       setSyncDot('syncing');
+
+      // Merge any local journals created while logged out
+      const localSnap = [...S.journals];
+
       await loadFromCloud();
-      if (event === 'SIGNED_IN') {
-        const localRaw = localStorage.getItem('paperly6');
-        if (localRaw) {
-          try {
-            const localJs = JSON.parse(localRaw);
-            for (const lj of localJs) {
-              if (!S.journals.find(j => j.id === lj.id)) S.journals.push(lj);
-            }
-            if (localJs.length) await syncToCloud();
-          } catch(e) {}
+
+      // Merge local-only journals into cloud set
+      for (const lj of localSnap) {
+        if (!S.journals.find(j => j.id === lj.id)) {
+          S.journals.push(lj);
         }
-        toast('Journals loaded ✓');
       }
+      if (localSnap.length) await syncToCloud();
+
+      if (event === 'SIGNED_IN') toast('Journals synced ✓');
+
+      // Always re-render after cloud load so the UI reflects cloud data
       renderLib();
     }
   } else {
     if (event === 'SIGNED_OUT') {
       S.journals = [];
+      load(); // fall back to local cache
       renderLib();
     }
-    // For INITIAL_SESSION with no user (logged-out page load), just load local
+    // INITIAL_SESSION with no user = logged-out page load.
+    // load() was already called in initLoadingState, just update auth bar.
     if (event === 'INITIAL_SESSION') {
-      load();
       renderLib();
     }
   }
@@ -1133,13 +1138,15 @@ function delPage() {
 function renderPage() {
   const p = getP(); if (!p) return;
   S.preset = p.preset || 'vintage';
+  // Restore per-page scrap mode
+  if (p.scrapMode !== undefined) S.scrapMode = p.scrapMode;
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.p === S.preset));
   document.getElementById('scrap-tog').checked = S.scrapMode;
 
   const content = document.getElementById('pcontent');
   content.innerHTML = '';
 
-  (p.decorations || []).filter(d => d.pos === 'before').forEach(d => content.appendChild(makeDecorEl(d)));
+  // Decorations are now absolute overlays — rendered after main content (see below)
 
   if (p.rawImage) {
     content.appendChild(makePhotoEl(p));
@@ -1159,8 +1166,9 @@ function renderPage() {
     if (p.quote || p.date || p.location) content.appendChild(makeQuoteBlock(p));
   }
 
-  (p.decorations || []).filter(d => d.pos === 'after').forEach(d => content.appendChild(makeDecorEl(d)));
   content.querySelectorAll('textarea').forEach(autoR);
+  // Render decorations as absolute overlays on the journal page (not inside content)
+  renderDecorations(p);
   renderLayers();
 }
 
@@ -1311,36 +1319,152 @@ function mkInp(cls, ph, val, field) {
   return inp;
 }
 
+// Build one draggable sticker element
 function makeDecorEl(d) {
-  const div = document.createElement('div');
   const rng = mkRng(strHash(d.id));
-  const tapeColors = { 'tape-floral': 'rgba(182,140,168,.62)', 'tape-stripe': 'rgba(155,178,140,.62)', 'tape-kraft': 'rgba(196,168,140,.65)' };
+  const page = document.getElementById('jpage');
+
+  // Outer wrapper — absolutely positioned on the journal page
+  const wrap = document.createElement('div');
+  wrap.dataset.did = d.id;
+  wrap.style.cssText =
+    'position:absolute;left:' + d.x + '%;top:' + d.y + '%;' +
+    'transform:rotate(' + (d.rot || 0) + 'deg);' +
+    'z-index:20;cursor:grab;user-select:none;touch-action:none;' +
+    'transition:box-shadow .12s';
+
+  // Delete button (shows on hover)
+  const del = document.createElement('button');
+  del.textContent = '✕';
+  del.title = 'Remove';
+  del.style.cssText =
+    'position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;' +
+    'background:var(--ac);color:#f5e0c0;border:none;font-size:9px;cursor:pointer;' +
+    'display:none;align-items:center;justify-content:center;z-index:30;line-height:1;padding:0';
+  del.onclick = (e) => { e.stopPropagation(); rmDecor(d.id); };
+  wrap.appendChild(del);
+  wrap.addEventListener('mouseenter', () => del.style.display = 'flex');
+  wrap.addEventListener('mouseleave', () => del.style.display = 'none');
+
+  // Inner content
+  const inner = document.createElement('div');
+  const tapeColors = { 'tape-floral': 'rgba(182,140,168,.7)', 'tape-stripe': 'rgba(155,178,140,.7)', 'tape-kraft': 'rgba(196,168,140,.72)' };
+
   if (tapeColors[d.type]) {
-    div.className = 'inline-tape';
-    div.style.cssText = 'background-color:' + tapeColors[d.type] + ';transform:rotate(' + ((rng() - .5) * 2) + 'deg)';
+    inner.style.cssText =
+      'width:90px;height:24px;background-color:' + tapeColors[d.type] + ';' +
+      'background-image:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.28) 4px,rgba(255,255,255,.28) 5px);' +
+      'box-shadow:0 2px 6px rgba(0,0,0,.15)';
   } else if (d.type === 'postmark') {
-    div.style.cssText = 'text-align:center;margin:8px 0';
-    div.innerHTML = '<span style="display:inline-flex;align-items:center;justify-content:center;width:50px;height:50px;border-radius:50%;border:2px solid rgba(100,28,28,.5);outline:1px solid rgba(100,28,28,.35);outline-offset:-6px;font-family:\'Special Elite\',monospace;font-size:6px;color:rgba(100,28,28,.65);text-align:center;line-height:1.3">PAPERLY<br>' + ['🌿','⚓','✈','📜','🔭'][Math.floor(rng() * 5)] + '<br>' + new Date().getFullYear() + '</span>';
+    inner.style.cssText =
+      'width:52px;height:52px;border-radius:50%;border:2.5px solid rgba(100,28,28,.55);' +
+      'outline:1.2px solid rgba(100,28,28,.35);outline-offset:-6px;' +
+      'display:flex;align-items:center;justify-content:center;' +
+      'font-family:\'Special Elite\',monospace;font-size:6.5px;color:rgba(100,28,28,.7);text-align:center;line-height:1.4;' +
+      'background:rgba(253,245,228,.6)';
+    inner.innerHTML = 'PAPERLY<br>' + ['🌿','⚓','✈','📜','🔭'][Math.floor(rng() * 5)] + '<br>' + new Date().getFullYear();
   } else if (d.type === 'botanical') {
-    div.style.cssText = 'text-align:' + ['left','center','right'][Math.floor(rng() * 3)] + ';margin:6px 0';
-    const s = document.createElement('span');
-    s.style.cssText = 'font-size:28px;display:inline-block;transform:rotate(' + ((rng() - .5) * 8) + 'deg);filter:sepia(.3)';
-    s.textContent = BOTANICALS[Math.floor(rng() * BOTANICALS.length)];
-    div.appendChild(s);
+    inner.style.cssText = 'font-size:34px;line-height:1;filter:sepia(.25)';
+    inner.textContent = BOTANICALS[Math.floor(rng() * BOTANICALS.length)];
   } else if (d.type === 'stamp') {
-    div.style.margin = '8px 0';
-    const s = document.createElement('span');
-    s.style.cssText = 'font-family:\'Special Elite\',monospace;font-size:10px;color:rgba(139,26,26,.62);border:2px solid rgba(139,26,26,.48);padding:2px 8px;display:inline-block;transform:rotate(' + ((rng() - .5) * 8) + 'deg);letter-spacing:.12em';
-    s.textContent = STAMPS[Math.floor(rng() * STAMPS.length)];
-    div.appendChild(s);
+    inner.style.cssText =
+      'font-family:\'Special Elite\',monospace;font-size:11px;color:rgba(139,26,26,.68);' +
+      'border:2.5px solid rgba(139,26,26,.52);padding:3px 10px;letter-spacing:.13em;' +
+      'background:rgba(253,245,228,.55)';
+    inner.textContent = STAMPS[Math.floor(rng() * STAMPS.length)];
   } else if (d.type === 'divider') {
-    div.className = 'inline-div'; div.textContent = '— ✦ —';
+    inner.style.cssText =
+      'font-family:\'Special Elite\',monospace;font-size:10px;color:var(--muted);' +
+      'letter-spacing:.35em;white-space:nowrap;padding:2px 4px';
+    inner.textContent = '— ✦ ✦ ✦ —';
   } else if (d.type === 'text') {
-    div.className = 'inline-txt'; div.contentEditable = 'true';
-    div.textContent = d.content || 'write something here…';
-    div.onblur = () => { d.content = div.textContent; save(); };
+    inner.contentEditable = 'true';
+    inner.style.cssText =
+      'font-family:Caveat,cursive;font-size:17px;color:var(--ink2);' +
+      'font-style:italic;min-width:80px;min-height:24px;outline:none;' +
+      'border-bottom:1px dashed rgba(160,128,80,.35);padding:1px 2px';
+    inner.textContent = d.content || 'write here…';
+    inner.onblur = () => { d.content = inner.textContent; save(); };
+    // Don't start drag when clicking into the text field
+    inner.onmousedown = (e) => e.stopPropagation();
   }
-  return div;
+
+  wrap.appendChild(inner);
+
+  // ── Drag logic (mouse + touch) ──
+  let dragging = false, startX, startY, startLeft, startTop;
+
+  function dragStart(cx, cy) {
+    dragging = true;
+    wrap.style.cursor = 'grabbing';
+    wrap.style.zIndex = '50';
+    startX = cx; startY = cy;
+    const rect = page.getBoundingClientRect();
+    startLeft = d.x / 100 * rect.width;
+    startTop  = d.y / 100 * rect.height;
+  }
+
+  function dragMove(cx, cy) {
+    if (!dragging) return;
+    const rect = page.getBoundingClientRect();
+    const newLeft = Math.max(0, Math.min(rect.width  - 10, startLeft + cx - startX));
+    const newTop  = Math.max(0, Math.min(rect.height - 10, startTop  + cy - startY));
+    d.x = (newLeft / rect.width)  * 100;
+    d.y = (newTop  / rect.height) * 100;
+    wrap.style.left = d.x + '%';
+    wrap.style.top  = d.y + '%';
+  }
+
+  function dragEnd() {
+    if (!dragging) return;
+    dragging = false;
+    wrap.style.cursor = 'grab';
+    wrap.style.zIndex = '20';
+    save();
+  }
+
+  // Mouse
+  wrap.addEventListener('mousedown', (e) => {
+    if (e.target === del) return;
+    e.preventDefault();
+    dragStart(e.clientX, e.clientY);
+    const mm = (e) => dragMove(e.clientX, e.clientY);
+    const mu = ()  => { dragEnd(); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu); };
+    window.addEventListener('mousemove', mm);
+    window.addEventListener('mouseup', mu);
+  });
+
+  // Touch
+  wrap.addEventListener('touchstart', (e) => {
+    if (e.target === del) return;
+    const t = e.touches[0];
+    dragStart(t.clientX, t.clientY);
+  }, { passive: true });
+  wrap.addEventListener('touchmove', (e) => {
+    const t = e.touches[0];
+    dragMove(t.clientX, t.clientY);
+    e.preventDefault();
+  }, { passive: false });
+  wrap.addEventListener('touchend', dragEnd);
+
+  return wrap;
+}
+
+function rmDecor(did) {
+  const p = getP(); if (!p) return;
+  p.decorations = (p.decorations || []).filter(d => d.id !== did);
+  save(); renderPage(); toast('Ephemera removed');
+}
+
+function renderDecorations(p) {
+  const page = document.getElementById('jpage');
+  // Remove existing sticker overlays
+  page.querySelectorAll('.decor-sticker').forEach(el => el.remove());
+  (p.decorations || []).forEach(d => {
+    const el = makeDecorEl(d);
+    el.classList.add('decor-sticker');
+    page.appendChild(el);
+  });
 }
 
 function renderLayers() {
@@ -1425,13 +1549,19 @@ function setPreset(preset, btn) {
 }
 
 // ═══════════════════════════════════════════════════
-// DECORATIONS
+// DECORATIONS — Draggable absolutely-positioned stickers
+// Each decoration stores {id, type, x, y, rot, content}
+// x/y are % of journal page so they survive resize.
 // ═══════════════════════════════════════════════════
 function addDecor(type) {
   const p = getP(); if (!p) return;
   if (!p.decorations) p.decorations = [];
-  p.decorations.push({ id: gid(), type, pos: p.rawImage ? 'after' : 'before', content: '' });
-  save(); renderPage(); toast('Ephemera added');
+  const rng2 = mkRng(strHash(type + Date.now()));
+  const x = 10 + rng2() * 55;
+  const y = 5  + rng2() * 35;
+  const rot = (rng2() - .5) * 16;
+  p.decorations.push({ id: gid(), type, x, y, rot, content: '' });
+  save(); renderPage(); toast('Drag to position ✦');
 }
 
 // ═══════════════════════════════════════════════════
@@ -1455,22 +1585,31 @@ function resetAiPanel() {
   }
 }
 
+// Downsize to 256px max — enough for Gemini to understand scene, much faster upload
 function downsizeForAI(dataUrl) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const MAX = 512;
+      const MAX = 256; // Reduced from 512 — 4x less data = much faster
       const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
       const w = Math.round(img.naturalWidth * scale);
       const h = Math.round(img.naturalHeight * scale);
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
       c.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(c.toDataURL('image/jpeg', 0.82));
+      resolve(c.toDataURL('image/jpeg', 0.72)); // lower quality = smaller payload
     };
-    img.onerror = () => resolve(dataUrl); // fallback on error
+    img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
   });
+}
+
+// Race helper — rejects after ms milliseconds
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => setTimeout(() => reject(new Error(label || `Timed out after ${ms/1000}s`)), ms))
+  ]);
 }
 
 async function runAI() {
@@ -1478,35 +1617,36 @@ async function runAI() {
   if (!p || !p.rawImage) return;
 
   document.getElementById('ai-panel').innerHTML =
-    '<div class="ai-loader"><span class="quill">✨</span><span>Gemini is reading<br>your photo…</span></div>';
+    '<div class="ai-loader"><span class="quill">✨</span><span>Gemini is writing<br>your page…</span></div>';
 
   try {
-    // FIX: Check Puter is available before trying to use it
     if (typeof puter === 'undefined' || !puter.ai) {
       throw new Error('Puter.js not loaded. Check your internet connection and refresh.');
     }
 
     const small = await downsizeForAI(p.rawImage);
-
-    // FIX: Convert data URL to blob robustly
     const res   = await fetch(small);
     const blob  = await res.blob();
     const imgFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
 
+    // Faster prompt: ask for 3 suggestions but keep output compact
     const prompt =
-      'You are Paperly, a junk journal co-pilot writing in this voice: ' + PRESET_VOICE[S.preset]
-      + '\n\nLook carefully at this photo. Note the objects, light, colours, mood, time of day, and setting.'
-      + '\n\nUsing ONLY what you can see, create 3 journal page suggestions that feel genuinely different.'
-      + '\n\nRules: titles 4-7 words, quotes under 18 words, dates evocative not literal (e.g. "a friday in late november"), locations intimate and specific.'
-      + '\n\nRespond ONLY with this exact JSON — no markdown, no explanation:'
-      + '\n{"suggestions":[{"title":"","desc":"2-3 sentence caption","quote":"Under 18 words","date":"Evocative date","location":"Specific place"},{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""}]}';
+      'Paperly journal co-pilot. Voice: ' + PRESET_VOICE[S.preset]
+      + '\n\nPhoto shows: describe scene in 5 words then write 3 journal page suggestions.'
+      + '\nBe BRIEF. Titles: 4-6 words. Desc: 1-2 sentences. Quote: under 12 words. Date: poetic (e.g. "a late november thursday"). Location: intimate.'
+      + '\nJSON only, no markdown:\n{"suggestions":[{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""}]}';
 
-    const response = await puter.ai.chat(
-      [{ role: 'user', content: [
-        { type: 'text',  text:  prompt },
-        { type: 'image', image: imgFile },
-      ]}],
-      { model: 'gemini-2.0-flash' }
+    // 20 second timeout — if Gemini vision is slow, fail fast and show retry
+    const response = await withTimeout(
+      puter.ai.chat(
+        [{ role: 'user', content: [
+          { type: 'text',  text: prompt },
+          { type: 'image', image: imgFile },
+        ]}],
+        { model: 'gemini-2.0-flash' }
+      ),
+      20000,
+      'Gemini took too long — please try again (it\'s usually faster on retry)'
     );
 
     // FIX: Normalise response shape — Puter versions differ in what they return
@@ -1586,7 +1726,17 @@ function renderSugCards(sugs) {
 // ═══════════════════════════════════════════════════
 // SCRAP MODE
 // ═══════════════════════════════════════════════════
-function toggleScrap(on) { S.scrapMode = on; const p = getP(); if (p && (p.quote || p.date || p.location)) renderPage(); }
+function toggleScrap(on) {
+  S.scrapMode = on;
+  // Persist scrap mode per page so it survives navigation
+  const p = getP();
+  if (p) {
+    p.scrapMode = on;
+    save();
+    // Re-render quote block if there's content to show
+    renderPage();
+  }
+}
 
 // ═══════════════════════════════════════════════════
 // HELPERS
@@ -1994,11 +2144,15 @@ function toast(msg) {
 // INIT
 // ═══════════════════════════════════════════════════
 (function initLoadingState() {
+  // Load from localStorage IMMEDIATELY — journals appear before Supabase resolves.
+  // The auth handler will then overlay cloud data on top when it arrives.
+  load();
+  renderLib();
+  // Safety net: if auth hasn't resolved in 4s and we're still showing nothing, re-render.
   const grid = document.getElementById('jgrid');
-  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;padding:60px 0;font-family:\'Special Elite\',monospace;font-size:11px;color:var(--muted);letter-spacing:.12em">LOADING…</div>';
   setTimeout(() => {
-    if (grid && grid.innerHTML.includes('LOADING')) renderLib();
-  }, 3000);
+    if (grid && !S.journals.length && !currentUser) renderLib();
+  }, 4000);
 })();
 </script>
 </body>
