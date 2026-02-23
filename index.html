@@ -520,6 +520,7 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
   .lib-h{font-size:22px}
 }
 </style>
+<script src="https://js.puter.com/v2/"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
@@ -611,7 +612,7 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
 
         <!-- AI panel -->
         <div class="psec">
-          <div class="ptitle">✦ AI SUGGESTIONS <span class="badge">CLAUDE</span></div>
+          <div class="ptitle">✦ AI SUGGESTIONS <span class="badge">GEMINI</span></div>
           <div id="ai-panel">
             <div style="font-family:'Caveat',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">
               Upload a photo — Claude automatically writes your page
@@ -1019,14 +1020,19 @@ async function submitAuth() {
     let res;
     if (authMode === 'in') {
       res = await sb.auth.signInWithPassword({ email, password: pass });
+      if (res.error) throw res.error;
     } else {
+      // Sign up then immediately sign in so user doesn't have to log in again
       res = await sb.auth.signUp({ email, password: pass });
+      if (res.error) throw res.error;
+      // Auto sign-in after account creation
+      const signInRes = await sb.auth.signInWithPassword({ email, password: pass });
+      if (signInRes.error) throw signInRes.error;
+      toast('Account created — welcome to Paperly ✓');
     }
-    if (res.error) throw res.error;
     closeModal('m-auth');
     document.getElementById('auth-email').value = '';
     document.getElementById('auth-pass').value = '';
-    if (authMode === 'up') toast('Account created — welcome to Paperly ✓');
   } catch(err) {
     errEl.textContent = err.message.toUpperCase();
   } finally {
@@ -1158,16 +1164,16 @@ function renderLib() {
   }
 
   // ── LOGGED IN: always show demo card first, then user's journals ──
-  // Demo card — always visible so users can revisit it
   const demoCard = document.createElement('div');
   demoCard.className = 'jcard';
   demoCard.onclick = showDemo;
   demoCard.innerHTML =
-    '<div class="jcov" style="background:#2a3a4a;background-image:repeating-linear-gradient(45deg,rgba(255,255,255,.06) 0,rgba(255,255,255,.06) 2px,transparent 2px,transparent 12px)">'
+    '<div class="jcov" style="background:#2a3a4a;overflow:hidden" onclick="">'
     + '<div class="jcov-grain"></div><div class="jspine"></div>'
+    + `<img class="jthumb" src="${DEMO_PAGES[0].photo}" style="filter:${DEMO_FILTERS[DEMO_PAGES[0].preset]}" onerror="this.style.display=\'none\'">`
     + '<div class="demo-badge" style="top:8px;right:8px">DEMO</div>'
-    + '<div class="jcov-txt"><div class="jcov-name">Tokyo Nights</div><div class="jcov-ct">see how it works</div></div></div>'
-    + '<div class="jmeta"><div class="jmeta-name">Demo Journal</div><div class="jmeta-date">tap to explore</div></div>';
+    + '<div class="jcov-txt"><div class="jcov-name">A Year in Fragments</div><div class="jcov-ct">4 pages · tap to explore</div></div></div>'
+    + '<div class="jmeta"><div class="jmeta-name">Demo Journal</div><div class="jmeta-date">see what\'s possible</div></div>';
   grid.appendChild(demoCard);
 
   if (!S.journals.length) {
@@ -1592,8 +1598,8 @@ function addDecor(type) {
 }
 
 // ═══════════════════════════════════════════════════
-// AI PIPELINE — fully agentic, runs in background
-// Image shows BEFORE AI runs. AI enriches the page.
+// AI PIPELINE — powered by Puter.js + Gemini (free)
+// Image shows instantly. Gemini enriches in background.
 // ═══════════════════════════════════════════════════
 function resetAiPanel() {
   const panel = document.getElementById('ai-panel');
@@ -1602,10 +1608,11 @@ function resetAiPanel() {
   if (p && p.rawImage && !p.title) {
     panel.innerHTML = '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">Generating page content…</div>';
   } else if (p && p.title) {
-    panel.innerHTML = '<div style="font-family:\'Caveat\',cursive;font-size:12px;color:var(--muted);margin-bottom:7px">Content applied ✓</div>'
-      + '<button class="regen-btn" onclick="runAI()">↺ REGENERATE</button>';
+    panel.innerHTML =
+      '<div style="font-family:\'Caveat\',cursive;font-size:12px;color:var(--muted);margin-bottom:7px">Content applied ✓</div>'
+      + '<button class="regen-btn" style="width:100%" onclick="runAI()">↺ REGENERATE</button>';
   } else {
-    panel.innerHTML = '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">Upload a photo — Claude automatically writes your page</div>';
+    panel.innerHTML = '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">Upload a photo — Gemini automatically writes your page</div>';
   }
 }
 
@@ -1630,58 +1637,62 @@ function downsizeForAI(dataUrl) {
   });
 }
 
+// ═══════════════════════════════════════════════════
+// AI — powered by Puter.js + Gemini (completely free,
+// no API key required from you or your users)
+// ═══════════════════════════════════════════════════
 async function runAI() {
   const p = getP();
   if (!p || !p.rawImage) return;
 
   document.getElementById('ai-panel').innerHTML =
-    '<div class="ai-loader"><span class="quill">✒️</span><span>Claude is reading<br>your photo…</span></div>';
+    '<div class="ai-loader"><span class="quill">✨</span><span>Gemini is reading<br>your photo…</span></div>';
 
   try {
-    // Downsize first — smaller payload = faster response
+    // Downsize image for faster processing (4MB → ~80KB)
     const small = await downsizeForAI(p.rawImage);
-    const b64 = small.split(',')[1];
-    const mt  = 'image/jpeg';
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1000,
-        system: 'You are Paperly, a junk journal co-pilot. You write in the voice of: ' + PRESET_VOICE[S.preset] + '\n\nSTEP 1 — Before writing anything, silently note to yourself: what do I literally see? (objects, light, colours, mood, time of day, setting). Do not include this step in your output.\n\nSTEP 2 — Using only what you observed, generate 3 suggestions that feel genuinely different from each other. Each must be rooted in specific visual details from the photo — never generic.\n\nRules:\n- Titles: 4-7 words, poetic, specific to this image\n- Quotes: under 18 words, feel handwritten and personal\n- Dates: evocative not literal ("a friday in late november")\n- Locations: intimate and tied to what you see\n\nRespond ONLY with this JSON, no markdown, no explanation:\n{"suggestions":[{"title":"","desc":"2-3 sentence caption","quote":"Memory under 18 words","date":"Evocative date phrase","location":"Specific location"},{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""}]}',
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mt, data: b64 } },
-            { type: 'text', text: 'Generate 3 junk journal page suggestions for the ' + PRESET_NAMES[S.preset] + ' style.' },
-          ],
-        }],
-      }),
-    });
+    // Convert data URL → Blob → File for Puter
+    const blob  = await (await fetch(small)).blob();
+    const imgFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
 
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const d = await res.json();
-    if (d.error) throw new Error(d.error.message || 'API error');
+    const prompt =
+      'You are Paperly, a junk journal co-pilot writing in this voice: ' + PRESET_VOICE[S.preset]
+      + '\n\nLook carefully at this photo. Note the objects, light, colours, mood, time of day, and setting.'
+      + '\n\nUsing ONLY what you can see, create 3 journal page suggestions that feel genuinely different.'
+      + '\n\nRules: titles 4-7 words, quotes under 18 words, dates evocative not literal (e.g. "a friday in late november"), locations intimate and specific.'
+      + '\n\nRespond ONLY with this exact JSON — no markdown, no explanation:'
+      + '\n{"suggestions":[{"title":"","desc":"2-3 sentence caption","quote":"Under 18 words","date":"Evocative date","location":"Specific place"},{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""}]}';
 
-    const raw = d.content.map(b => b.text || '').join('');
+    // Puter.js: free Gemini vision — no API key, no cost to you
+    const response = await puter.ai.chat(
+      [{ role: 'user', content: [
+        { type: 'text',  text:  prompt },
+        { type: 'image', image: imgFile },
+      ]}],
+      { model: 'gemini-2.0-flash' }
+    );
+
+    // Normalise response shape across Puter versions
+    const raw = typeof response === 'string'
+      ? response
+      : response?.message?.content?.[0]?.text
+        ?? response?.text
+        ?? JSON.stringify(response);
+
     const i0 = raw.indexOf('{'), i1 = raw.lastIndexOf('}');
     if (i0 < 0 || i1 < 0) throw new Error('No JSON in response');
-    const parsed = JSON.parse(raw.slice(i0, i1 + 1));
-    const sugs = parsed.suggestions;
-    if (!sugs || !sugs.length) throw new Error('Empty suggestions');
+    const { suggestions: sugs } = JSON.parse(raw.slice(i0, i1 + 1));
+    if (!sugs?.length) throw new Error('Empty suggestions');
 
     applyS(sugs[0]);
     renderSugCards(sugs);
 
   } catch(err) {
+    console.error('Gemini error:', err);
     document.getElementById('ai-panel').innerHTML =
       '<div style="font-family:\'Special Elite\',monospace;font-size:10px;color:var(--red);line-height:1.7;padding:6px 0">'
-      + esc(err.message.slice(0, 120)) + '</div>'
+      + esc((err.message || 'Unknown error').slice(0, 160)) + '</div>'
       + '<button class="regen-btn" onclick="runAI()">↺ RETRY</button>';
   }
 }
@@ -1895,118 +1906,202 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeShare()
 // A pre-filled journal so users see the product before
 // committing to creating their own
 // ═══════════════════════════════════════════════════
+const DEMO_PAGES = [
+  {
+    id: '__demo_p1__', preset: 'moody',
+    title: 'The city that never quite sleeps',
+    desc: 'Somewhere between the neon and the rain, the streets felt like a film I had already seen — but couldn\'t remember the ending of. Every window a world, every shadow a sentence left unfinished.',
+    quote: 'pressed against the glass, the world moved and I stayed still.',
+    date: 'a thursday in late november', location: 'shinjuku, 2am',
+    // picsum.photos/seed/[seed] — CORS-free, works everywhere including claude.ai
+    // seed names chosen for visual match to the page mood
+    photo: 'https://picsum.photos/id/1060/600/400',
+    tape: 'rgba(100,120,180,.52)', tapeAngle: '-1.8deg', tapeLeft: '26%',
+  },
+  {
+    id: '__demo_p2__', preset: 'botanical',
+    title: 'Light through the canopy',
+    desc: 'The forest held its breath. Somewhere above, light was breaking through in long gold columns, catching the dust of a thousand ordinary mornings made extraordinary by simply being outside.',
+    quote: 'I counted seven different greens before I stopped counting.',
+    date: 'a sunday in early september', location: 'the woods behind the house',
+    photo: 'https://picsum.photos/id/15/600/400',
+    tape: 'rgba(140,175,100,.52)', tapeAngle: '1.4deg', tapeLeft: '16%',
+  },
+  {
+    id: '__demo_p3__', preset: 'darkacademia',
+    title: 'Marginal notes on a rainy afternoon',
+    desc: 'The coffee cooled while I read. Outside, the rain made the windows into watercolours. There is something about old books and grey skies that makes the world feel both smaller and endlessly vast.',
+    quote: 'the best sentences are the ones someone else underlined first.',
+    date: 'an october afternoon', location: 'the corner table, usual café',
+    photo: 'https://picsum.photos/id/766/600/400',
+    tape: 'rgba(180,145,85,.52)', tapeAngle: '-2.2deg', tapeLeft: '34%',
+  },
+  {
+    id: '__demo_p4__', preset: 'vintage',
+    title: 'Letters we never finished writing',
+    desc: 'Found them in a shoebox — postcards, half-written letters, photographs with names on the back I don\'t recognise. Someone kept these. Someone thought they mattered. They were right.',
+    quote: 'the handwriting changes partway through. something happened.',
+    date: 'found on a tuesday in march', location: 'grandmother\'s attic',
+    photo: 'https://picsum.photos/id/357/600/400',
+    tape: 'rgba(196,168,140,.55)', tapeAngle: '2.4deg', tapeLeft: '20%',
+  },
+];
+
 const DEMO_JOURNAL = {
   id: '__demo__',
-  name: 'Tokyo Nights — A Demo',
+  name: 'A Year in Fragments — Demo',
   color: '#2a3a4a',
   createdAt: Date.now(),
   isDemo: true,
-  pages: [{
-    id: '__demo_p1__',
-    rawImage: null, // no image — uses illustrated placeholder
-    preset: 'moody',
-    title: 'The city that never quite sleeps',
-    desc: 'Somewhere between the neon and the rain, the streets felt like a film I had already seen — but couldn\'t remember the ending of.',
-    quote: 'pressed against the glass, the world moved and I stayed still.',
-    date: 'a thursday in late november',
-    location: 'shinjuku, 2am',
-    decorations: [],
-    layers: [],
-  }]
+  pages: DEMO_PAGES,
 };
 
+// Preset CSS filters — same ones used on real journal pages
+const DEMO_FILTERS = {
+  moody:        'sepia(.5) brightness(.72) contrast(1.22) saturate(.55) hue-rotate(-8deg)',
+  botanical:    'sepia(.18) brightness(1.06) contrast(1.08) saturate(.85) hue-rotate(12deg)',
+  darkacademia: 'sepia(.62) brightness(.78) contrast(1.18) saturate(.42)',
+  vintage:      'sepia(.75) brightness(.88) contrast(1.06) saturate(.68)',
+  summer:       'sepia(.22) brightness(1.12) contrast(.95) saturate(1.1) hue-rotate(8deg)',
+};
+
+// Builds a real-photo frame for demo pages — same visual treatment as user pages
+function makeDemoScene(page) {
+  const rng  = mkRng(strHash(page.id + 'demo'));
+  const tilt = [-2.5,-1.6,-.8,0,.8,1.6,2.5][Math.floor(rng()*7)];
+
+  const frame = document.createElement('div');
+  frame.style.cssText = `transform:rotate(${tilt}deg);position:relative;margin-bottom:18px;isolation:isolate`;
+
+  // Photo clip — torn edge + drop shadow
+  const clip = document.createElement('div');
+  clip.style.cssText = `clip-path:${makeTornClipPath(page.id)};filter:drop-shadow(4px 6px 10px rgba(42,31,14,.38));overflow:hidden`;
+
+  // Real photo with preset colour grade applied
+  const img = document.createElement('img');
+  img.src = page.photo;
+  img.alt = page.title;
+  img.style.cssText = `display:block;width:100%;height:220px;object-fit:cover;object-position:center;filter:${DEMO_FILTERS[page.preset] || DEMO_FILTERS.vintage}`;
+
+  // Fallback gradient shown while image loads
+  img.style.background = 'linear-gradient(160deg,#2a1e0e,#3a2c18)';
+
+  // On error (e.g. offline) fall back to a tasteful gradient
+  img.onerror = () => {
+    img.style.display = 'none';
+    const fb = document.createElement('div');
+    fb.style.cssText = `width:100%;height:220px;background:linear-gradient(160deg,#1a1410,#2a2018,#1e1a10);display:flex;align-items:center;justify-content:center`;
+    fb.innerHTML = `<span style="font-family:'Special Elite',monospace;font-size:10px;color:rgba(200,170,120,.5);letter-spacing:.15em">PHOTO · OPEN FILE LOCALLY TO VIEW</span>`;
+    clip.appendChild(fb);
+  };
+
+  clip.appendChild(img);
+  frame.appendChild(clip);
+
+  // Washi tape strip
+  const tape = document.createElement('div');
+  tape.style.cssText = `position:absolute;top:-10px;left:${page.tapeLeft};width:74px;height:22px;z-index:5;background-color:${page.tape};transform:rotate(${page.tapeAngle});background-image:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.22) 4px,rgba(255,255,255,.22) 5px)`;
+  frame.appendChild(tape);
+
+  return frame;
+}
+
 function showDemo() {
-  // Load the demo journal into the editor without saving it
   S.jid = '__demo__';
   S.pidx = 0;
   document.getElementById('view-lib').classList.remove('active');
   document.getElementById('view-ed').classList.add('active');
 
-  const j = DEMO_JOURNAL;
-  document.getElementById('ed-jname').textContent = j.name + ' (demo)';
-  S.preset = 'moody';
-  document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.p === 'moody'));
-  document.getElementById('scrap-tog').checked = false;
+  document.getElementById('ed-jname').textContent = DEMO_JOURNAL.name + ' ✦ DEMO';
 
-  // Render sidebar
+  renderDemoSidebar();
+  renderDemoPage(0);
+}
+
+function renderDemoSidebar() {
   const list = document.getElementById('pglist');
   list.innerHTML = '';
-  const t = document.createElement('div');
-  t.className = 'pgthumb active';
-  t.style.cssText = 'font-family:Caveat,cursive;font-size:9px;color:var(--muted)';
-  t.textContent = 'demo'; t.innerHTML += '<span class="pgnum">1</span>';
-  list.appendChild(t);
+  DEMO_PAGES.forEach((p, i) => {
+    const t = document.createElement('div');
+    t.className = 'pgthumb' + (i === S.pidx ? ' active' : '');
+    t.title = p.title;
+    // Show the real photo as thumbnail with preset filter
+    t.style.cssText = 'overflow:hidden;position:relative';
+    t.innerHTML = `<img src="${p.photo}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:${DEMO_FILTERS[p.preset]}">`
+      + `<span class="pgnum">${i+1}</span>`;
+    t.onclick = () => { S.pidx = i; renderDemoSidebar(); renderDemoPage(i); closePgDrawer(); };
+    list.appendChild(t);
+  });
+}
 
-  // Render the demo page content
+function renderDemoPage(idx) {
+  const p = DEMO_PAGES[idx];
   const content = document.getElementById('pcontent');
   content.innerHTML = '';
 
-  // Demo placeholder — illustrated city scene using CSS + text
-  const hero = document.createElement('div');
-  hero.style.cssText = 'margin-bottom:18px;position:relative;font-family:"Special Elite",monospace';
-  hero.innerHTML = `
-    <div style="background:linear-gradient(180deg,#0a0e1a 0%,#1a2035 40%,#2a1510 100%);
-      height:220px;position:relative;overflow:hidden;
-      filter:drop-shadow(4px 6px 10px rgba(42,31,14,.4))">
-      <div style="position:absolute;inset:0;display:flex;align-items:flex-end;padding:0 20px 16px;gap:6px">
-        ${[40,70,55,85,45,60,75,50,65,80].map(h =>
-          `<div style="flex:1;background:rgba(${Math.random()>.5?'255,180,60':'180,200,255'},.${Math.floor(Math.random()*3+1)});
-            height:${h}%;position:relative">
-            <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 8px,rgba(0,0,0,.3) 8px,rgba(0,0,0,.3) 9px)"></div>
-          </div>`
-        ).join('')}
-      </div>
-      <div style="position:absolute;top:0;left:0;right:0;height:60px;
-        background:linear-gradient(180deg,rgba(10,14,26,.8),transparent)"></div>
-      <div style="position:absolute;bottom:0;left:0;right:0;height:30px;
-        background:linear-gradient(0deg,rgba(42,21,16,.6),transparent)"></div>
-      <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-        font-size:11px;color:rgba(255,220,160,.6);letter-spacing:.2em;text-align:center;
-        font-family:\'Special Elite\',monospace">YOUR PHOTO<br>APPEARS HERE</div>
-      <!-- Washi tape -->
-      <div style="position:absolute;top:-9px;left:28%;width:60px;height:20px;
-        background:rgba(100,128,180,.5);transform:rotate(-1.5deg);
-        background-image:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.2) 4px,rgba(255,255,255,.2) 5px)"></div>
-    </div>`;
-  content.appendChild(hero);
+  S.preset = p.preset;
+  document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.p === p.preset));
 
-  const sep = document.createElement('div'); sep.className='divider-orn'; sep.textContent='✦ ✦ ✦';
+  // Real photo with preset colour grading
+  content.appendChild(makeDemoScene(p));
+
+  // Divider
+  const sep = document.createElement('div'); sep.className = 'divider-orn'; sep.textContent = '✦ ✦ ✦';
   content.appendChild(sep);
 
-  const p = DEMO_JOURNAL.pages[0];
+  // Title
   const titleEl = document.createElement('div');
-  titleEl.style.cssText = 'font-family:Caveat,cursive;font-size:28px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:6px';
+  titleEl.style.cssText = 'font-family:Caveat,cursive;font-size:28px;font-weight:700;color:var(--ink);line-height:1.2;margin-bottom:7px';
   titleEl.textContent = p.title;
   content.appendChild(titleEl);
 
+  // Description
   const descEl = document.createElement('div');
-  descEl.style.cssText = 'font-family:"Special Elite",monospace;font-size:12px;color:var(--ink2);line-height:1.9;letter-spacing:.02em;margin-bottom:10px';
+  descEl.style.cssText = 'font-family:"Special Elite",monospace;font-size:11.5px;color:var(--ink2);line-height:1.9;letter-spacing:.015em;margin-bottom:12px';
   descEl.textContent = p.desc;
   content.appendChild(descEl);
 
-  const qi = document.createElement('div'); qi.className='quote-inline';
+  // Quote block
+  const qi = document.createElement('div'); qi.className = 'quote-inline';
   const qtext = document.createElement('div');
-  qtext.style.cssText='font-family:Caveat,cursive;font-size:19px;color:var(--ink);margin-bottom:5px';
-  qtext.textContent='"' + p.quote + '"';
-  const qmeta = document.createElement('div');
-  qmeta.style.cssText='font-family:"Special Elite",monospace;font-size:9px;color:var(--muted);letter-spacing:.08em';
-  qmeta.textContent = p.date + ' · ' + p.location;
-  qi.appendChild(qtext); qi.appendChild(qmeta);
+  qtext.style.cssText = 'font-family:Caveat,cursive;font-size:20px;color:var(--ink);margin-bottom:6px;font-style:italic;line-height:1.3';
+  qtext.textContent = '\u201c' + p.quote + '\u201d';
+  const qfooter = document.createElement('div');
+  qfooter.style.cssText = 'display:flex;flex-direction:column;gap:3px';
+  const qdate = document.createElement('div');
+  qdate.style.cssText = 'font-family:"Special Elite",monospace;font-size:9px;color:var(--muted);letter-spacing:.08em';
+  qdate.textContent = p.date;
+  const qloc = document.createElement('div');
+  qloc.style.cssText = 'font-family:Caveat,cursive;font-size:13px;color:var(--muted);font-style:italic';
+  qloc.textContent = p.location;
+  qfooter.appendChild(qdate); qfooter.appendChild(qloc);
+  qi.appendChild(qtext); qi.appendChild(qfooter);
   content.appendChild(qi);
 
-  // CTA banner
-  const cta = document.createElement('div');
-  cta.style.cssText = 'margin-top:28px;padding:16px;background:rgba(122,64,32,.08);border:1.5px solid rgba(122,64,32,.2);text-align:center';
-  cta.innerHTML = '<div style="font-family:\'Special Elite\',monospace;font-size:11px;color:var(--ac);letter-spacing:.1em;margin-bottom:6px">✦ THIS IS A DEMO PAGE ✦</div>'
-    + '<div style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:13px;color:var(--ink2);margin-bottom:12px">Upload your own photo and Claude writes your journal page automatically</div>'
-    + '<button class="btn btn-p" style="margin:0 auto" onclick="showLib();setTimeout(showNewModal,100)">+ START MY JOURNAL</button>';
-  content.appendChild(cta);
+  // Page indicator + nav
+  const nav = document.createElement('div');
+  nav.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-top:24px;padding-top:14px;border-top:1px solid var(--border)';
+  nav.innerHTML =
+    `<button class="btn btn-s" style="font-size:10px;padding:4px 10px" onclick="if(S.pidx>0){S.pidx--;renderDemoSidebar();renderDemoPage(S.pidx)}" ${idx===0?'disabled style="opacity:.3"':''}>← PREV</button>`
+    + `<span style="font-family:'Special Elite',monospace;font-size:9px;color:var(--muted);letter-spacing:.1em">PAGE ${idx+1} OF ${DEMO_PAGES.length}</span>`
+    + `<button class="btn btn-s" style="font-size:10px;padding:4px 10px" onclick="if(S.pidx<${DEMO_PAGES.length-1}){S.pidx++;renderDemoSidebar();renderDemoPage(S.pidx)}" ${idx===DEMO_PAGES.length-1?'disabled style="opacity:.3"':''}>NEXT →</button>`;
+  content.appendChild(nav);
 
-  // Show prompt in AI panel
+  // CTA on last page
+  if (idx === DEMO_PAGES.length - 1) {
+    const cta = document.createElement('div');
+    cta.style.cssText = 'margin-top:20px;padding:16px;background:rgba(122,64,32,.08);border:1.5px solid rgba(122,64,32,.18);text-align:center';
+    cta.innerHTML = '<div style="font-family:\'Special Elite\',monospace;font-size:10px;color:var(--ac);letter-spacing:.12em;margin-bottom:6px">✦ YOUR JOURNAL AWAITS ✦</div>'
+      + '<div style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:13px;color:var(--ink2);margin-bottom:12px;line-height:1.6">Upload any photo and Claude writes your title, caption, and memory quote in seconds.</div>'
+      + '<button class="btn btn-p" style="margin:0 auto" onclick="showLib();setTimeout(()=>currentUser?showNewModal():openModal(\'m-auth\'),100)">+ START MY JOURNAL</button>';
+    content.appendChild(cta);
+  }
+
+  // AI panel — demo message
   document.getElementById('ai-panel').innerHTML =
-    '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">'
-    + 'This is a demo. Create your own journal and upload a photo to get AI suggestions.</div>'
-    + '<button class="btn btn-p" style="width:100%;margin-top:8px;font-size:10px" onclick="showLib();setTimeout(showNewModal,100)">+ START MY JOURNAL</button>';
+    '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:8px 0;line-height:1.6">'
+    + `✦ Page ${idx+1} of ${DEMO_PAGES.length}<br><em style="font-size:11px">${['city at night','forest morning','rainy café','grandmother\'s letters'][idx]}</em></div>`
+    + '<button class="btn btn-p" style="width:100%;margin-top:8px;justify-content:center;font-size:10px" onclick="showLib();setTimeout(()=>currentUser?showNewModal():openModal(\'m-auth\'),100)">+ START MY JOURNAL</button>';
 }
 
 // Override getP/getJ for demo mode
@@ -2039,11 +2134,17 @@ function toast(msg) {
 }
 
 // ═══════════════════════════════════════════════════
-// INIT
+// INIT — show loading state; onAuthStateChange does
+// the real first render once auth resolves (~200ms)
 // ═══════════════════════════════════════════════════
-// Don't load local journals here — onAuthStateChange handles everything.
-// Render the library immediately so logged-out users see the landing page.
-renderLib();
+(function initLoadingState() {
+  const grid = document.getElementById('jgrid');
+  if (grid) grid.innerHTML = '<div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;padding:60px 0;font-family:\'Special Elite\',monospace;font-size:11px;color:var(--muted);letter-spacing:.12em">LOADING…</div>';
+  // Safety fallback — if auth hasn't resolved in 3s, render anyway
+  setTimeout(() => {
+    if (grid && grid.innerHTML.includes('LOADING')) renderLib();
+  }, 3000);
+})();
 </script>
 </body>
 </html>
