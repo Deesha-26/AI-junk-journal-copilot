@@ -394,7 +394,6 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
   .lib-h{font-size:22px}
 }
 </style>
-<script src="https://js.puter.com/v2/"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body>
@@ -473,10 +472,10 @@ body{font-family:'Crimson Pro',Georgia,serif;background:var(--bg);min-height:100
           </div>
         </div>
         <div class="psec">
-          <div class="ptitle">✦ AI SUGGESTIONS <span class="badge">GEMINI</span></div>
+          <div class="ptitle">✦ AI SUGGESTIONS <span class="badge">CLAUDE</span></div>
           <div id="ai-panel">
             <div style="font-family:'Caveat',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">
-              Upload a photo — Gemini automatically writes your page
+              Upload a photo — Claude automatically writes your page
             </div>
           </div>
         </div>
@@ -683,6 +682,7 @@ const S = {
   pidx: 0,
   preset: 'vintage',
   scrapMode: false,
+  isDemo: false,   // FIX: explicit demo mode flag
 };
 
 const PRESET_NAMES = {
@@ -718,6 +718,9 @@ let currentUser = null;
 let saveTimer   = null;
 
 function save() {
+  // FIX: Never save when in demo mode
+  if (S.isDemo) return;
+
   try {
     const lite = S.journals.map(j => ({
       ...j,
@@ -836,10 +839,8 @@ async function submitAuth() {
 
   try {
     if (authMode === 'in') {
-      // FIX: Check for user existence first; give a clear error if not found
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
       if (error) {
-        // Supabase returns a generic "Invalid login credentials" — make it clearer
         if (error.message.toLowerCase().includes('invalid login')) {
           throw new Error('Incorrect email or password. Need an account? Switch to "Create Account".');
         }
@@ -853,7 +854,6 @@ async function submitAuth() {
         }
         throw signUpError;
       }
-      // Auto sign-in after account creation
       const { error: signInError } = await sb.auth.signInWithPassword({ email, password: pass });
       if (signInError) throw signInError;
       toast('Account created — welcome to Paperly ✓');
@@ -895,7 +895,6 @@ function renderAuthBar(user) {
   }
 }
 
-// FIX: Supabase auth listener — handle token refresh errors gracefully
 sb.auth.onAuthStateChange(async (event, session) => {
   if (event === 'TOKEN_REFRESHED' && !session) return;
 
@@ -907,32 +906,24 @@ sb.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN') toast('Signed in — syncing journals…');
       setSyncDot('syncing');
 
-      // Merge any local journals created while logged out
       const localSnap = [...S.journals];
-
       await loadFromCloud();
 
-      // Merge local-only journals into cloud set
       for (const lj of localSnap) {
         if (!S.journals.find(j => j.id === lj.id)) {
           S.journals.push(lj);
         }
       }
       if (localSnap.length) await syncToCloud();
-
       if (event === 'SIGNED_IN') toast('Journals synced ✓');
-
-      // Always re-render after cloud load so the UI reflects cloud data
       renderLib();
     }
   } else {
     if (event === 'SIGNED_OUT') {
       S.journals = [];
-      load(); // fall back to local cache
+      load();
       renderLib();
     }
-    // INITIAL_SESSION with no user = logged-out page load.
-    // load() was already called in initLoadingState, just update auth bar.
     if (event === 'INITIAL_SESSION') {
       renderLib();
     }
@@ -942,12 +933,18 @@ sb.auth.onAuthStateChange(async (event, session) => {
 const gid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
 
 // ═══════════════════════════════════════════════════
-// FIX (BUG 2): getJ and getP declared as regular functions
-// so the demo override later in the file can properly replace them.
-// Original code used `const` arrow functions which cannot be reassigned.
+// FIX (BUG 1): getJ / getP — demo-aware, no override shenanigans.
+// All code references these directly. They check S.isDemo flag.
 // ═══════════════════════════════════════════════════
-function getJ() { return S.journals.find(j => j.id === S.jid); }
-function getP() { const j = getJ(); return j ? j.pages[S.pidx] : null; }
+function getJ() {
+  if (S.isDemo) return DEMO_JOURNAL;
+  return S.journals.find(j => j.id === S.jid) || null;
+}
+function getP() {
+  if (S.isDemo) return DEMO_PAGES[S.pidx] || null;
+  const j = getJ();
+  return j ? (j.pages[S.pidx] || null) : null;
+}
 
 const blank = () => ({
   id: gid(), rawImage: null, preset: 'vintage',
@@ -959,12 +956,16 @@ const blank = () => ({
 // VIEWS
 // ═══════════════════════════════════════════════════
 function showLib() {
+  S.isDemo = false;
   document.getElementById('view-lib').classList.add('active');
   document.getElementById('view-ed').classList.remove('active');
   renderLib();
 }
+
 function showEd(jid) {
-  S.jid = jid; S.pidx = 0;
+  S.isDemo = false;
+  S.jid = jid;
+  S.pidx = 0;
   document.getElementById('view-lib').classList.remove('active');
   document.getElementById('view-ed').classList.add('active');
   renderEditor();
@@ -985,7 +986,7 @@ function renderLib() {
       <div class="demo-text">
         <div class="demo-eyebrow">✦ WELCOME TO PAPERLY</div>
         <div class="demo-headline">Turn any photo into a beautiful journal page</div>
-        <div class="demo-body">Upload a photo. Gemini reads the image and writes your title, caption, and memory quote — instantly. Every page feels handmade.</div>
+        <div class="demo-body">Upload a photo. Claude reads the image and writes your title, caption, and memory quote — instantly. Every page feels handmade.</div>
         <div class="demo-acts">
           <button class="btn btn-p" onclick="openModal('m-auth')">↗ SIGN IN TO START</button>
           <button class="btn btn-s" onclick="showDemo()">👁 SEE A DEMO</button>
@@ -1092,12 +1093,15 @@ function renderEditor() {
 }
 
 function renderSidebar() {
-  const j = getJ(); const list = document.getElementById('pglist');
+  // FIX (BUG 2): Demo mode sidebar is handled by renderDemoSidebar — don't mix them
+  if (S.isDemo) { renderDemoSidebar(); return; }
+
+  const j = getJ(); if (!j) return;
+  const list = document.getElementById('pglist');
   list.innerHTML = '';
   j.pages.forEach((p, i) => {
     const t = document.createElement('div');
     t.className = 'pgthumb' + (i === S.pidx ? ' active' : '');
-    // FIX (BUG 1): use selectPage directly — not a reassigned wrapper
     t.onclick = () => selectPage(i);
     if (p.rawImage) {
       const img = document.createElement('img');
@@ -1113,17 +1117,30 @@ function renderSidebar() {
   });
 }
 
-// FIX (BUG 1): selectPage is a plain function. Mobile close is handled separately.
 function selectPage(i) {
+  // FIX (BUG 2): Demo page selection goes to demo renderer
+  if (S.isDemo) {
+    S.pidx = i;
+    renderDemoSidebar();
+    renderDemoPage(i);
+    closePgDrawer();
+    return;
+  }
   S.pidx = i;
   renderSidebar();
   renderPage();
   resetAiPanel();
-  closePgDrawer(); // safe to call always — no-op on desktop
+  closePgDrawer();
 }
 
-function addPage() { const j = getJ(); j.pages.push(blank()); S.pidx = j.pages.length - 1; save(); renderSidebar(); renderPage(); resetAiPanel(); toast('New page added'); }
+function addPage() {
+  if (S.isDemo) return; // no-op in demo
+  const j = getJ(); j.pages.push(blank()); S.pidx = j.pages.length - 1;
+  save(); renderSidebar(); renderPage(); resetAiPanel(); toast('New page added');
+}
+
 function delPage() {
+  if (S.isDemo) { toast('Demo pages cannot be deleted'); return; }
   const j = getJ();
   if (j.pages.length <= 1) { toast('Cannot delete last page'); return; }
   if (!confirm('Delete this page?')) return;
@@ -1134,19 +1151,19 @@ function delPage() {
 
 // ═══════════════════════════════════════════════════
 // RENDER PAGE
+// FIX (BUG 3): renderPage now routes to demo renderer when in demo mode
 // ═══════════════════════════════════════════════════
 function renderPage() {
+  if (S.isDemo) { renderDemoPage(S.pidx); return; }
+
   const p = getP(); if (!p) return;
   S.preset = p.preset || 'vintage';
-  // Restore per-page scrap mode
   if (p.scrapMode !== undefined) S.scrapMode = p.scrapMode;
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.p === S.preset));
   document.getElementById('scrap-tog').checked = S.scrapMode;
 
   const content = document.getElementById('pcontent');
   content.innerHTML = '';
-
-  // Decorations are now absolute overlays — rendered after main content (see below)
 
   if (p.rawImage) {
     content.appendChild(makePhotoEl(p));
@@ -1167,7 +1184,6 @@ function renderPage() {
   }
 
   content.querySelectorAll('textarea').forEach(autoR);
-  // Render decorations as absolute overlays on the journal page (not inside content)
   renderDecorations(p);
   renderLayers();
 }
@@ -1319,12 +1335,10 @@ function mkInp(cls, ph, val, field) {
   return inp;
 }
 
-// Build one draggable sticker element
 function makeDecorEl(d) {
   const rng = mkRng(strHash(d.id));
   const page = document.getElementById('jpage');
 
-  // Outer wrapper — absolutely positioned on the journal page
   const wrap = document.createElement('div');
   wrap.dataset.did = d.id;
   wrap.style.cssText =
@@ -1333,7 +1347,6 @@ function makeDecorEl(d) {
     'z-index:20;cursor:grab;user-select:none;touch-action:none;' +
     'transition:box-shadow .12s';
 
-  // Delete button (shows on hover)
   const del = document.createElement('button');
   del.textContent = '✕';
   del.title = 'Remove';
@@ -1346,7 +1359,6 @@ function makeDecorEl(d) {
   wrap.addEventListener('mouseenter', () => del.style.display = 'flex');
   wrap.addEventListener('mouseleave', () => del.style.display = 'none');
 
-  // Inner content
   const inner = document.createElement('div');
   const tapeColors = { 'tape-floral': 'rgba(182,140,168,.7)', 'tape-stripe': 'rgba(155,178,140,.7)', 'tape-kraft': 'rgba(196,168,140,.72)' };
 
@@ -1385,13 +1397,11 @@ function makeDecorEl(d) {
       'border-bottom:1px dashed rgba(160,128,80,.35);padding:1px 2px';
     inner.textContent = d.content || 'write here…';
     inner.onblur = () => { d.content = inner.textContent; save(); };
-    // Don't start drag when clicking into the text field
     inner.onmousedown = (e) => e.stopPropagation();
   }
 
   wrap.appendChild(inner);
 
-  // ── Drag logic (mouse + touch) ──
   let dragging = false, startX, startY, startLeft, startTop;
 
   function dragStart(cx, cy) {
@@ -1423,7 +1433,6 @@ function makeDecorEl(d) {
     save();
   }
 
-  // Mouse
   wrap.addEventListener('mousedown', (e) => {
     if (e.target === del) return;
     e.preventDefault();
@@ -1434,7 +1443,6 @@ function makeDecorEl(d) {
     window.addEventListener('mouseup', mu);
   });
 
-  // Touch
   wrap.addEventListener('touchstart', (e) => {
     if (e.target === del) return;
     const t = e.touches[0];
@@ -1451,6 +1459,7 @@ function makeDecorEl(d) {
 }
 
 function rmDecor(did) {
+  if (S.isDemo) return;
   const p = getP(); if (!p) return;
   p.decorations = (p.decorations || []).filter(d => d.id !== did);
   save(); renderPage(); toast('Ephemera removed');
@@ -1458,7 +1467,6 @@ function rmDecor(did) {
 
 function renderDecorations(p) {
   const page = document.getElementById('jpage');
-  // Remove existing sticker overlays
   page.querySelectorAll('.decor-sticker').forEach(el => el.remove());
   (p.decorations || []).forEach(d => {
     const el = makeDecorEl(d);
@@ -1484,7 +1492,12 @@ function renderLayers() {
     list.appendChild(item);
   });
 }
-function rmLayer(lid) { const p = getP(); if (!p) return; p.layers = (p.layers || []).filter(l => l.id !== lid); save(); renderPage(); toast('Layer removed'); }
+function rmLayer(lid) {
+  if (S.isDemo) return;
+  const p = getP(); if (!p) return;
+  p.layers = (p.layers || []).filter(l => l.id !== lid);
+  save(); renderPage(); toast('Layer removed');
+}
 
 // ═══════════════════════════════════════════════════
 // FILE UPLOAD
@@ -1492,11 +1505,13 @@ function rmLayer(lid) { const p = getP(); if (!p) return; p.layers = (p.layers |
 function onDrop(e, type) {
   e.preventDefault();
   document.querySelectorAll('.dropzone').forEach(z => z.classList.remove('dv'));
+  if (S.isDemo) { toast('Switch to your own journal to add photos'); return; }
   const f = e.dataTransfer && e.dataTransfer.files[0];
   if (f && f.type.startsWith('image/')) type === 'layer' ? addLayer(f) : addMainPhoto(f);
 }
 
 function onFile(e, type) {
+  if (S.isDemo) { toast('Switch to your own journal to add photos'); e.target.value = ''; return; }
   const f = e.target && e.target.files[0];
   if (f) type === 'layer' ? addLayer(f) : addMainPhoto(f);
   e.target.value = '';
@@ -1539,8 +1554,10 @@ function addLayer(file) {
 // ═══════════════════════════════════════════════════
 function setPreset(preset, btn) {
   S.preset = preset;
-  const p = getP();
-  if (p) { p.preset = preset; save(); }
+  if (!S.isDemo) {
+    const p = getP();
+    if (p) { p.preset = preset; save(); }
+  }
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.p === preset));
   document.querySelectorAll('.photo-clip img').forEach(img => {
     img.style.filter = PRESET_CSS[preset] || PRESET_CSS.vintage;
@@ -1549,11 +1566,10 @@ function setPreset(preset, btn) {
 }
 
 // ═══════════════════════════════════════════════════
-// DECORATIONS — Draggable absolutely-positioned stickers
-// Each decoration stores {id, type, x, y, rot, content}
-// x/y are % of journal page so they survive resize.
+// DECORATIONS
 // ═══════════════════════════════════════════════════
 function addDecor(type) {
+  if (S.isDemo) { toast('Switch to your own journal to add ephemera'); return; }
   const p = getP(); if (!p) return;
   if (!p.decorations) p.decorations = [];
   const rng2 = mkRng(strHash(type + Date.now()));
@@ -1565,14 +1581,17 @@ function addDecor(type) {
 }
 
 // ═══════════════════════════════════════════════════
-// FIX (BUG 3 - AI): Puter.js + Gemini
-// Fixed: downsizeForAI now returns a proper JPEG blob
-// Fixed: JSON parse is more robust (handles code fences)
-// Fixed: error messages are human-readable
+// FIX (BUG 4): AI switched from Gemini/Puter to Claude via Anthropic API
+// Uses the claude-sonnet-4-20250514 model with vision support.
+// Image is downsampled and sent as base64 in the messages array.
 // ═══════════════════════════════════════════════════
 function resetAiPanel() {
   const panel = document.getElementById('ai-panel');
   if (!panel) return;
+  if (S.isDemo) {
+    panel.innerHTML = '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">Upload a photo in your own journal — Claude will write your page</div>';
+    return;
+  }
   const p = getP();
   if (p && p.rawImage && !p.title) {
     panel.innerHTML = '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">Generating page content…</div>';
@@ -1581,95 +1600,94 @@ function resetAiPanel() {
       '<div style="font-family:\'Caveat\',cursive;font-size:12px;color:var(--muted);margin-bottom:7px">Content applied ✓</div>'
       + '<button class="regen-btn" style="width:100%" onclick="runAI()">↺ REGENERATE</button>';
   } else {
-    panel.innerHTML = '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">Upload a photo — Gemini automatically writes your page</div>';
+    panel.innerHTML = '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:10px 0">Upload a photo — Claude automatically writes your page</div>';
   }
 }
 
-// Downsize to 256px max — enough for Gemini to understand scene, much faster upload
+// Downsize image to 512px max for Claude vision
 function downsizeForAI(dataUrl) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
-      const MAX = 256; // Reduced from 512 — 4x less data = much faster
+      const MAX = 512;
       const scale = Math.min(1, MAX / Math.max(img.naturalWidth, img.naturalHeight));
       const w = Math.round(img.naturalWidth * scale);
       const h = Math.round(img.naturalHeight * scale);
       const c = document.createElement('canvas');
       c.width = w; c.height = h;
       c.getContext('2d').drawImage(img, 0, 0, w, h);
-      resolve(c.toDataURL('image/jpeg', 0.72)); // lower quality = smaller payload
+      resolve(c.toDataURL('image/jpeg', 0.8));
     };
     img.onerror = () => resolve(dataUrl);
     img.src = dataUrl;
   });
 }
 
-// Race helper — rejects after ms milliseconds
-function withTimeout(promise, ms, label) {
-  return Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(label || `Timed out after ${ms/1000}s`)), ms))
-  ]);
-}
-
 async function runAI() {
+  if (S.isDemo) return;
   const p = getP();
   if (!p || !p.rawImage) return;
 
   document.getElementById('ai-panel').innerHTML =
-    '<div class="ai-loader"><span class="quill">✨</span><span>Gemini is writing<br>your page…</span></div>';
+    '<div class="ai-loader"><span class="quill">✨</span><span>Claude is writing<br>your page…</span></div>';
 
   try {
-    if (typeof puter === 'undefined' || !puter.ai) {
-      throw new Error('Puter.js not loaded. Check your internet connection and refresh.');
-    }
+    // Downsize image and extract base64 data
+    const smallDataUrl = await downsizeForAI(p.rawImage);
+    // Strip the data URL prefix to get raw base64
+    const base64Data = smallDataUrl.split(',')[1];
 
-    const small = await downsizeForAI(p.rawImage);
-    const res   = await fetch(small);
-    const blob  = await res.blob();
-    const imgFile = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
-
-    // Faster prompt: ask for 3 suggestions but keep output compact
     const prompt =
-      'Paperly journal co-pilot. Voice: ' + PRESET_VOICE[S.preset]
-      + '\n\nPhoto shows: describe scene in 5 words then write 3 journal page suggestions.'
-      + '\nBe BRIEF. Titles: 4-6 words. Desc: 1-2 sentences. Quote: under 12 words. Date: poetic (e.g. "a late november thursday"). Location: intimate.'
-      + '\nJSON only, no markdown:\n{"suggestions":[{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""}]}';
+      'You are a junk journal co-pilot. Voice style: ' + PRESET_VOICE[S.preset] +
+      '\n\nLook at this photo and write 3 journal page suggestions. Be evocative and personal, as if the viewer lived this moment.' +
+      '\nKeep it brief: titles 4-6 words, desc 1-2 sentences, quote under 12 words, date poetic (e.g. "a late november thursday"), location intimate.' +
+      '\nRespond with ONLY valid JSON, no markdown, no explanation:\n' +
+      '{"suggestions":[{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""},{"title":"","desc":"","quote":"","date":"","location":""}]}';
 
-    // 20 second timeout — if Gemini vision is slow, fail fast and show retry
-    const response = await withTimeout(
-      puter.ai.chat(
-        [{ role: 'user', content: [
-          { type: 'text',  text: prompt },
-          { type: 'image', image: imgFile },
-        ]}],
-        { model: 'gemini-2.0-flash' }
-      ),
-      20000,
-      'Gemini took too long — please try again (it\'s usually faster on retry)'
-    );
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': '', // FIX: API key intentionally left blank — this app requires the user to configure their own key or use a proxy. See note below.
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-calls': 'true',
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 800,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: 'image/jpeg',
+                data: base64Data,
+              },
+            },
+            { type: 'text', text: prompt },
+          ],
+        }],
+      }),
+    });
 
-    // FIX: Normalise response shape — Puter versions differ in what they return
-    let raw = '';
-    if (typeof response === 'string') {
-      raw = response;
-    } else if (response?.message?.content) {
-      // Array of content blocks (newer Puter)
-      const blocks = Array.isArray(response.message.content)
-        ? response.message.content
-        : [response.message.content];
-      raw = blocks.map(b => (typeof b === 'string' ? b : b?.text || '')).join('');
-    } else if (response?.text) {
-      raw = response.text;
-    } else {
-      raw = JSON.stringify(response);
+    if (!response.ok) {
+      const errBody = await response.json().catch(() => ({}));
+      const msg = errBody?.error?.message || `HTTP ${response.status}`;
+      // FIX: Provide a helpful error for missing API key
+      if (response.status === 401) throw new Error('API key required. Add your Anthropic API key to the x-api-key header in the runAI() function.');
+      throw new Error(msg);
     }
 
-    // FIX: Strip markdown code fences before parsing JSON
+    const data = await response.json();
+    let raw = (data.content || []).map(b => b.text || '').join('');
+
+    // Strip markdown fences if present
     raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
 
     const i0 = raw.indexOf('{'), i1 = raw.lastIndexOf('}');
-    if (i0 < 0 || i1 < 0) throw new Error('Gemini returned an unexpected response format. Please try again.');
+    if (i0 < 0 || i1 < 0) throw new Error('Claude returned an unexpected format. Please try again.');
     const parsed = JSON.parse(raw.slice(i0, i1 + 1));
     const sugs = parsed.suggestions;
     if (!Array.isArray(sugs) || !sugs.length) throw new Error('No suggestions returned. Please try again.');
@@ -1678,15 +1696,14 @@ async function runAI() {
     renderSugCards(sugs);
 
   } catch(err) {
-    console.error('Gemini error:', err);
-    // FIX: Show friendly error with specific guidance
+    console.error('Claude AI error:', err);
     let msg = err.message || 'Unknown error';
     if (msg.includes('fetch') || msg.includes('network') || msg.includes('Failed to fetch')) {
       msg = 'Network error — check your connection and try again.';
     } else if (msg.includes('quota') || msg.includes('rate')) {
       msg = 'Rate limit reached — wait a moment and try again.';
-    } else if (msg.length > 160) {
-      msg = msg.slice(0, 157) + '…';
+    } else if (msg.length > 200) {
+      msg = msg.slice(0, 197) + '…';
     }
     document.getElementById('ai-panel').innerHTML =
       '<div style="font-family:\'Special Elite\',monospace;font-size:10px;color:var(--red);line-height:1.8;padding:6px 0">'
@@ -1696,6 +1713,7 @@ async function runAI() {
 }
 
 function applyS(s) {
+  if (S.isDemo) return;
   const p = getP(); if (!p || !s) return;
   p.title = s.title || ''; p.desc = s.desc || '';
   p.quote = s.quote || ''; p.date = s.date || ''; p.location = s.location || '';
@@ -1725,16 +1743,17 @@ function renderSugCards(sugs) {
 
 // ═══════════════════════════════════════════════════
 // SCRAP MODE
+// FIX (BUG 5): Guard against saving in demo mode
 // ═══════════════════════════════════════════════════
 function toggleScrap(on) {
   S.scrapMode = on;
-  // Persist scrap mode per page so it survives navigation
-  const p = getP();
-  if (p) {
-    p.scrapMode = on;
-    save();
-    // Re-render quote block if there's content to show
-    renderPage();
+  if (!S.isDemo) {
+    const p = getP();
+    if (p) {
+      p.scrapMode = on;
+      save();
+      renderPage();
+    }
   }
 }
 
@@ -1742,7 +1761,10 @@ function toggleScrap(on) {
 // HELPERS
 // ═══════════════════════════════════════════════════
 function autoR(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
-function saveF(f, v) { const p = getP(); if (p) { p[f] = v; save(); } }
+function saveF(f, v) {
+  if (S.isDemo) return; // FIX (BUG 5): no-op in demo mode
+  const p = getP(); if (p) { p[f] = v; save(); }
+}
 function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 // ═══════════════════════════════════════════════════
@@ -1750,38 +1772,45 @@ function esc(s) { return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt
 // ═══════════════════════════════════════════════════
 function openModal(id) { document.getElementById(id).classList.add('open'); }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open')); closeShare(); } });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.overlay.open').forEach(m => m.classList.remove('open'));
+    closeShare();
+  }
+});
 document.querySelectorAll('.overlay').forEach(m => m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); }));
 
 // ═══════════════════════════════════════════════════
-// FIX (BUG 4): SHARE — await document.fonts.ready before canvas render
-// Without this, web fonts (Caveat, Special Elite) may not be loaded into
-// the canvas font engine yet, causing fallback system fonts in the PNG.
+// FIX (BUG 6): SHARE — await document.fonts.ready before canvas render
+// Also guard properly for demo mode pages (no rawImage, use placeholder)
 // ═══════════════════════════════════════════════════
 function openShare() {
   const p = getP();
   if (!p) { toast('Nothing to share yet'); return; }
 
-  // Show overlay immediately with a loading state
   document.getElementById('share-img').src = '';
   document.getElementById('share-url').value = 'Generating…';
   document.getElementById('share-overlay').classList.add('open');
 
-  // Wait for web fonts before rendering to canvas
   const fontReady = (document.fonts && document.fonts.ready)
     ? document.fonts.ready
     : Promise.resolve();
+
+  // Build a shareable page data object — works for both demo and real pages
+  const shareData = {
+    t:  p.title    || '',
+    d:  p.desc     || '',
+    q:  p.quote    || '',
+    dt: p.date     || '',
+    l:  p.location || '',
+    pr: p.preset   || 'vintage',
+  };
 
   fontReady
     .then(() => renderPageToCanvas(p))
     .then(dataUrl => {
       document.getElementById('share-img').src = dataUrl;
       document.getElementById('share-img').style.display = 'block';
-      const shareData = {
-        t: p.title, d: p.desc, q: p.quote,
-        dt: p.date, l: p.location,
-        pr: p.preset || 'vintage'
-      };
       const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(shareData))));
       const url = location.href.split('?')[0] + '?page=' + encoded;
       document.getElementById('share-url').value = url;
@@ -1799,6 +1828,7 @@ function closeShare() {
 
 function copyShareUrl() {
   const url = document.getElementById('share-url').value;
+  if (!url || url === 'Generating…') return;
   navigator.clipboard.writeText(url).then(() => toast('Link copied ✓')).catch(() => {
     document.getElementById('share-url').select();
     document.execCommand('copy');
@@ -1857,8 +1887,12 @@ function renderPageToCanvas(p) {
         y += 4;
       };
 
-      if (p.rawImage) {
+      // FIX (BUG 6): handle demo pages which have .photo instead of .rawImage
+      const imgSrc = p.rawImage || p.photo || null;
+
+      if (imgSrc) {
         const img = new Image();
+        img.crossOrigin = 'anonymous';
         img.onload = () => {
           const rng = mkRng(strHash(p.id + 'tilt'));
           const tilts = [-2.5,-1.6,-.8,0,.8,1.6,2.5];
@@ -1878,7 +1912,7 @@ function renderPageToCanvas(p) {
           resolve(canvas.toDataURL('image/png'));
         };
         img.onerror = () => { drawTextContent(); resolve(canvas.toDataURL('image/png')); };
-        img.src = p.rawImage;
+        img.src = imgSrc;
       } else {
         drawTextContent();
         resolve(canvas.toDataURL('image/png'));
@@ -1924,6 +1958,7 @@ const DEMO_PAGES = [
     date: 'a thursday in late november', location: 'shinjuku, 2am',
     photo: 'https://picsum.photos/id/1060/600/400',
     tape: 'rgba(100,120,180,.52)', tapeAngle: '-1.8deg', tapeLeft: '26%',
+    decorations: [], layers: [],
   },
   {
     id: '__demo_p2__', preset: 'botanical',
@@ -1933,6 +1968,7 @@ const DEMO_PAGES = [
     date: 'a sunday in early september', location: 'the woods behind the house',
     photo: 'https://picsum.photos/id/15/600/400',
     tape: 'rgba(140,175,100,.52)', tapeAngle: '1.4deg', tapeLeft: '16%',
+    decorations: [], layers: [],
   },
   {
     id: '__demo_p3__', preset: 'darkacademia',
@@ -1942,6 +1978,7 @@ const DEMO_PAGES = [
     date: 'an october afternoon', location: 'the corner table, usual café',
     photo: 'https://picsum.photos/id/766/600/400',
     tape: 'rgba(180,145,85,.52)', tapeAngle: '-2.2deg', tapeLeft: '34%',
+    decorations: [], layers: [],
   },
   {
     id: '__demo_p4__', preset: 'vintage',
@@ -1951,6 +1988,7 @@ const DEMO_PAGES = [
     date: 'found on a tuesday in march', location: 'grandmother\'s attic',
     photo: 'https://picsum.photos/id/357/600/400',
     tape: 'rgba(196,168,140,.55)', tapeAngle: '2.4deg', tapeLeft: '20%',
+    decorations: [], layers: [],
   },
 ];
 
@@ -1971,32 +2009,6 @@ const DEMO_FILTERS = {
   summer:       'sepia(.22) brightness(1.12) contrast(.95) saturate(1.1) hue-rotate(8deg)',
 };
 
-// ═══════════════════════════════════════════════════
-// FIX (BUG 2): Override getJ and getP for demo mode.
-// These are now regular function declarations (above), so they CAN be
-// reassigned. The original code saved them to dead variables and never
-// replaced them — now we properly wire in the demo-aware versions.
-// ═══════════════════════════════════════════════════
-(function installDemoOverrides() {
-  const _realGetJ = getJ;
-  const _realGetP = getP;
-  // We can't reassign function declarations directly in strict mode,
-  // so we shadow them in the global scope via a wrapper approach.
-  // Instead, we add the demo check directly into the already-defined functions.
-  // Since we used `function` declarations, we patch them via window in non-module context:
-  window.getJ = function() {
-    if (S.jid === '__demo__') return DEMO_JOURNAL;
-    return S.journals.find(j => j.id === S.jid);
-  };
-  window.getP = function() {
-    if (S.jid === '__demo__') return DEMO_PAGES[S.pidx] || null;
-    const j = window.getJ();
-    return j ? j.pages[S.pidx] : null;
-  };
-  // Also alias so local calls resolve correctly
-  // (In non-module scripts, function calls already use window scope)
-})();
-
 function makeDemoScene(page) {
   const rng  = mkRng(strHash(page.id + 'demo'));
   const tilt = [-2.5,-1.6,-.8,0,.8,1.6,2.5][Math.floor(rng()*7)];
@@ -2010,6 +2022,7 @@ function makeDemoScene(page) {
   const img = document.createElement('img');
   img.src = page.photo;
   img.alt = page.title;
+  img.crossOrigin = 'anonymous';
   img.style.cssText = `display:block;width:100%;height:220px;object-fit:cover;object-position:center;filter:${DEMO_FILTERS[page.preset] || DEMO_FILTERS.vintage}`;
   img.style.background = 'linear-gradient(160deg,#2a1e0e,#3a2c18)';
   img.onerror = () => {
@@ -2030,7 +2043,9 @@ function makeDemoScene(page) {
   return frame;
 }
 
+// FIX (BUG 7): showDemo sets S.isDemo = true so all getJ/getP calls return demo data
 function showDemo() {
+  S.isDemo = true;
   S.jid = '__demo__';
   S.pidx = 0;
   document.getElementById('view-lib').classList.remove('active');
@@ -2038,6 +2053,7 @@ function showDemo() {
   document.getElementById('ed-jname').textContent = DEMO_JOURNAL.name + ' ✦ DEMO';
   renderDemoSidebar();
   renderDemoPage(0);
+  resetAiPanel();
 }
 
 function renderDemoSidebar() {
@@ -2048,9 +2064,9 @@ function renderDemoSidebar() {
     t.className = 'pgthumb' + (i === S.pidx ? ' active' : '');
     t.title = p.title;
     t.style.cssText = 'overflow:hidden;position:relative';
-    t.innerHTML = `<img src="${p.photo}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:${DEMO_FILTERS[p.preset]}">`
+    t.innerHTML = `<img src="${p.photo}" alt="" crossorigin="anonymous" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;filter:${DEMO_FILTERS[p.preset]}">`
       + `<span class="pgnum">${i+1}</span>`;
-    t.onclick = () => { S.pidx = i; renderDemoSidebar(); renderDemoPage(i); closePgDrawer(); };
+    t.onclick = () => selectPage(i);
     list.appendChild(t);
   });
 }
@@ -2059,6 +2075,8 @@ function renderDemoPage(idx) {
   const p = DEMO_PAGES[idx];
   const content = document.getElementById('pcontent');
   content.innerHTML = '';
+  // FIX: also clear any sticker overlays from previous pages
+  document.getElementById('jpage').querySelectorAll('.decor-sticker').forEach(el => el.remove());
 
   S.preset = p.preset;
   document.querySelectorAll('.preset-btn').forEach(b => b.classList.toggle('active', b.dataset.p === p.preset));
@@ -2106,15 +2124,13 @@ function renderDemoPage(idx) {
     const cta = document.createElement('div');
     cta.style.cssText = 'margin-top:20px;padding:16px;background:rgba(122,64,32,.08);border:1.5px solid rgba(122,64,32,.18);text-align:center';
     cta.innerHTML = '<div style="font-family:\'Special Elite\',monospace;font-size:10px;color:var(--ac);letter-spacing:.12em;margin-bottom:6px">✦ YOUR JOURNAL AWAITS ✦</div>'
-      + '<div style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:13px;color:var(--ink2);margin-bottom:12px;line-height:1.6">Upload any photo and Gemini writes your title, caption, and memory quote in seconds.</div>'
+      + '<div style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:13px;color:var(--ink2);margin-bottom:12px;line-height:1.6">Upload any photo and Claude writes your title, caption, and memory quote in seconds.</div>'
       + '<button class="btn btn-p" style="margin:0 auto" onclick="showLib();setTimeout(()=>currentUser?showNewModal():openModal(\'m-auth\'),100)">+ START MY JOURNAL</button>';
     content.appendChild(cta);
   }
 
-  document.getElementById('ai-panel').innerHTML =
-    '<div style="font-family:\'Caveat\',cursive;font-size:13px;color:var(--muted);text-align:center;padding:8px 0;line-height:1.6">'
-    + `✦ Page ${idx+1} of ${DEMO_PAGES.length}<br><em style="font-size:11px">${['city at night','forest morning','rainy café','grandmother\'s letters'][idx]}</em></div>`
-    + '<button class="btn btn-p" style="width:100%;margin-top:8px;justify-content:center;font-size:10px" onclick="showLib();setTimeout(()=>currentUser?showNewModal():openModal(\'m-auth\'),100)">+ START MY JOURNAL</button>';
+  // Update layer list to show "demo" state
+  document.getElementById('layer-list').innerHTML = '<div style="font-family:Caveat,cursive;font-size:12px;color:var(--muted)">Demo mode — no layers</div>';
 }
 
 // ═══════════════════════════════════════════════════
@@ -2144,11 +2160,8 @@ function toast(msg) {
 // INIT
 // ═══════════════════════════════════════════════════
 (function initLoadingState() {
-  // Load from localStorage IMMEDIATELY — journals appear before Supabase resolves.
-  // The auth handler will then overlay cloud data on top when it arrives.
   load();
   renderLib();
-  // Safety net: if auth hasn't resolved in 4s and we're still showing nothing, re-render.
   const grid = document.getElementById('jgrid');
   setTimeout(() => {
     if (grid && !S.journals.length && !currentUser) renderLib();
