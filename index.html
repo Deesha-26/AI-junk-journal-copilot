@@ -848,7 +848,7 @@ window.__supabaseStub = {
 };
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"
-  onerror="console.warn('Supabase CDN unavailable - using local stub'); window.supabase = window.__supabaseStub;">
+  onerror="console.warn('Supabase CDN unavailable - using local stub'); window.supabase = window.__supabaseStub; window.__supabaseUsingStub = true;">
 </script>
 
 </head>
@@ -1219,7 +1219,15 @@ async function loadFromCloud() {
   try {
     const {data,error} = await sb.from('journals').select('data').eq('user_id',currentUser.id).order('updated_at',{ascending:false});
     if(error) throw error;
-    if(data&&data.length) { S.journals=data.map(r=>r.data); save(); }
+    if(data&&data.length) {
+      S.journals=data.map(r=>r.data);
+      // Restore base64 images from localStorage (cloud stores only '__R__' markers)
+      S.journals.forEach(j=>j.pages.forEach(p=>{
+        if(p.rawImage==='__R__') p.rawImage=localStorage.getItem('pr_'+p.id)||null;
+        (p.layers||[]).forEach(l=>{if(l.raw==='__R__') l.raw=localStorage.getItem('pr_'+l.id)||null;});
+      }));
+      save();
+    }
     setSyncDot('ok');
   } catch(err) { console.warn('Cloud load failed:',err.message); setSyncDot('offline'); }
 }
@@ -1303,6 +1311,11 @@ sb.auth.onAuthStateChange(async (event, session) => {
   if(event==='TOKEN_REFRESHED'&&!session) return;
   currentUser=session?.user||null;
   renderAuthBar(currentUser);
+  // Show a one-time notice if using the offline stub
+  if(currentUser && window.__supabaseUsingStub && !sessionStorage.getItem('stubNotified')) {
+    sessionStorage.setItem('stubNotified','1');
+    setTimeout(()=>toast('Offline mode — data saves locally only'),800);
+  }
   if(currentUser) {
     // Show library IMMEDIATELY — don't wait for cloud sync
     renderLib();
@@ -1548,16 +1561,21 @@ function renderSidebar(){
 
 function selectPage(i){
   if(S.isDemo){S.pidx=i;renderDemoSidebar();renderDemoPage(i);closePgDrawer();return;}
-  S.pidx=i; renderSidebar(); renderPage(); resetAiPanel(); closePgDrawer();
+  S.pidx=i;
+  const p=getP(); S.scrapMode=p?!!(p.scrapMode):false;
+  renderSidebar(); renderPage(); resetAiPanel(); closePgDrawer();
 }
 
-function addPage(){if(S.isDemo)return;const j=getJ();if(!j)return;j.pages.push(blank());S.pidx=j.pages.length-1;save();renderSidebar();renderPage();resetAiPanel();toast('New page added');}
+function addPage(){if(S.isDemo)return;const j=getJ();if(!j)return;j.pages.push(blank());S.pidx=j.pages.length-1;S.scrapMode=false;save();renderSidebar();renderPage();resetAiPanel();toast('New page added');}
 function delPage(){
   if(S.isDemo){toast('Demo pages cannot be deleted');return;}
   const j=getJ(); if(!j)return; if(j.pages.length<=1){toast('Cannot delete last page');return;}
   if(!confirm('Delete this page?'))return;
   j.pages.splice(S.pidx,1); S.pidx=Math.max(0,S.pidx-1);
-  save(); renderEditor(); toast('Page deleted');
+  save();
+  // Re-read scrap mode from new current page before rendering
+  const newP=getP(); S.scrapMode=newP?!!(newP.scrapMode):false;
+  renderEditor(); toast('Page deleted');
 }
 
 // ─── TORN CLIP PATH ───────────────────────────────
@@ -1808,7 +1826,9 @@ async function runAI(){
   } catch(err) {
     let msg=err.message||'Unknown error';
     if(msg.includes('Failed to fetch')||msg.includes('NetworkError')||msg.includes('Load failed'))
-      msg='CORS error: Anthropic API blocked direct browser calls. Add your API key and ensure it has browser access enabled.';
+      msg = location.protocol==='file:'
+        ? 'CORS error: API calls are blocked from file:// — host the app on a local server (e.g. python -m http.server) or deploy online.'
+        : 'Network error — Anthropic API blocked direct browser calls. Ensure your API key has browser access enabled.';
     else if(msg.includes('fetch')||msg.includes('network'))msg='Network error — check your connection and API key.';
     else if(msg.includes('401')||msg.includes('auth'))msg='Invalid API key. Check your key at console.anthropic.com';
     else if(msg.includes('quota')||msg.includes('rate'))msg='Rate limit — wait a moment and retry.';
@@ -1854,10 +1874,31 @@ function openShare(){
   const simg=document.getElementById('share-img');simg.src='';simg.style.display='none';document.getElementById('share-url').value='Generating…';const shareEl=document.getElementById('share-overlay');shareEl.classList.add('open');
   const fontReady=document.fonts&&document.fonts.ready?document.fonts.ready:Promise.resolve();
   const shareData={t:p.title||'',d:p.desc||'',q:p.quote||'',dt:p.date||'',l:p.location||'',pr:p.preset||'vintage'};
-  fontReady.then(()=>renderPageToCanvas(p)).then(dataUrl=>{simg.src=dataUrl;simg.style.display='block';const encoded=btoa(encodeURIComponent(JSON.stringify(shareData)));document.getElementById('share-url').value=location.href.split('?')[0]+'?page='+encoded;}).catch(()=>{document.getElementById('share-url').value='Preview failed — try again';toast('Preview failed');});
+  fontReady.then(()=>renderPageToCanvas(p)).then(dataUrl=>{
+    simg.src=dataUrl;simg.style.display='block';
+    const encoded=btoa(encodeURIComponent(JSON.stringify(shareData)));
+    const baseUrl=location.href.split('?')[0];
+    const shareUrl=baseUrl+'?page='+encoded;
+    document.getElementById('share-url').value=shareUrl;
+    if(location.protocol==='file:') toast('Tip: host the app online for shareable links');
+  }).catch(()=>{document.getElementById('share-url').value='Preview failed — try again';toast('Preview failed');});
 }
 function closeShare(){document.getElementById('share-overlay').classList.remove('open');}
-function copyShareUrl(){const url=document.getElementById('share-url').value;if(!url||url==='Generating…')return;navigator.clipboard.writeText(url).then(()=>toast('Link copied ✓')).catch(()=>{toast('Copy failed — select the URL manually');});}
+function copyShareUrl(){
+  const url=document.getElementById('share-url').value;
+  if(!url||url==='Generating…')return;
+  if(navigator.clipboard&&window.isSecureContext){
+    navigator.clipboard.writeText(url).then(()=>toast('Link copied ✓')).catch(()=>fallbackCopy(url));
+  } else {
+    fallbackCopy(url);
+  }
+}
+function fallbackCopy(text){
+  const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;left:-9999px;top:-9999px;opacity:0';document.body.appendChild(ta);ta.select();ta.setSelectionRange(0,99999);
+  try{const ok=document.execCommand('copy');toast(ok?'Link copied ✓':'Select the URL to copy manually');}
+  catch(e){toast('Select the URL to copy manually');}
+  document.body.removeChild(ta);
+}
 function downloadPage(){const img=document.getElementById('share-img');if(!img.src||!img.src.startsWith('data:')){toast('Preview not ready');return;}const a=document.createElement('a');a.href=img.src;a.download='paperly-page.png';a.click();toast('Saved ✓');}
 document.getElementById('share-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('share-overlay'))closeShare();});
 document.getElementById('share-overlay').addEventListener('keydown',e=>{if(e.key==='Escape')closeShare();});
