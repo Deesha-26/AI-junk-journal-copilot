@@ -888,7 +888,7 @@ window.__supabaseStub = {
     </h1>
 
     <p class="hero-subtitle">
-      Upload a photo. Claude reads the light, the feeling, the story — and writes your journal page for you.
+      Upload a photo. GPT-4o reads the light, the feeling, the story — and writes your journal page for you.
     </p>
 
     <!-- Preview stack of journal pages -->
@@ -919,8 +919,8 @@ window.__supabaseStub = {
         </div>
         <div class="feature">
           <span class="feature-ico">✨</span>
-          <div class="feature-name">Claude writes it</div>
-          <p class="feature-desc">Claude looks at your image and writes a title, caption, and memory quote — in your chosen voice. Vintage. Moody. Botanical.</p>
+          <div class="feature-name">AI writes it</div>
+          <p class="feature-desc">GPT-4o looks at your image and writes a title, caption, and memory quote — in your chosen voice. Vintage. Moody. Botanical.</p>
         </div>
         <div class="feature">
           <span class="feature-ico">🪡</span>
@@ -1053,15 +1053,38 @@ window.__supabaseStub = {
         </div>
         <div class="psec">
           <div class="ptitle">🪡 EPHEMERA</div>
-          <div class="decor-grid">
+          <div style="font-family:'Special Elite',monospace;font-size:8px;color:var(--muted);letter-spacing:.12em;margin-bottom:5px">TAPE</div>
+          <div class="decor-grid" style="margin-bottom:8px">
             <button class="decor-btn" onclick="addDecor('tape-floral')"><span class="di">🌸</span>FLORAL</button>
-            <button class="decor-btn" onclick="addDecor('tape-stripe')"><span class="di">📐</span>STRIPE</button>
+            <button class="decor-btn" onclick="addDecor('tape-stripe')"><span class="di">🟦</span>STRIPE</button>
             <button class="decor-btn" onclick="addDecor('tape-kraft')"><span class="di">📦</span>KRAFT</button>
+            <button class="decor-btn" onclick="addDecor('tape-lace')"><span class="di">🕊</span>LACE</button>
+            <button class="decor-btn" onclick="addDecor('tape-grid')"><span class="di">🔲</span>GRID</button>
+            <button class="decor-btn" onclick="addDecor('tape-gold')"><span class="di">✨</span>GOLD</button>
+          </div>
+          <div style="font-family:'Special Elite',monospace;font-size:8px;color:var(--muted);letter-spacing:.12em;margin-bottom:5px">MARKS & LABELS</div>
+          <div class="decor-grid" style="margin-bottom:8px">
             <button class="decor-btn" onclick="addDecor('postmark')"><span class="di">📮</span>POSTMARK</button>
-            <button class="decor-btn" onclick="addDecor('botanical')"><span class="di">🌿</span>PLANT</button>
             <button class="decor-btn" onclick="addDecor('stamp')"><span class="di">🔖</span>STAMP</button>
+            <button class="decor-btn" onclick="addDecor('number')"><span class="di">🔢</span>NUMBER</button>
+            <button class="decor-btn" onclick="addDecor('ticket')"><span class="di">🎟</span>TICKET</button>
+            <button class="decor-btn" onclick="addDecor('label')"><span class="di">🏷</span>LABEL</button>
+            <button class="decor-btn" onclick="addDecor('corner')"><span class="di">📐</span>CORNER</button>
+          </div>
+          <div style="font-family:'Special Elite',monospace;font-size:8px;color:var(--muted);letter-spacing:.12em;margin-bottom:5px">NATURE & DECOR</div>
+          <div class="decor-grid" style="margin-bottom:8px">
+            <button class="decor-btn" onclick="addDecor('botanical')"><span class="di">🌿</span>PLANT</button>
+            <button class="decor-btn" onclick="addDecor('heart')"><span class="di">🤍</span>HEART</button>
+            <button class="decor-btn" onclick="addDecor('star')"><span class="di">✦</span>STAR</button>
+            <button class="decor-btn" onclick="addDecor('moon')"><span class="di">🌙</span>MOON</button>
+            <button class="decor-btn" onclick="addDecor('feather')"><span class="di">🪶</span>FEATHER</button>
+            <button class="decor-btn" onclick="addDecor('butterfly')"><span class="di">🦋</span>BUTTERFLY</button>
+          </div>
+          <div style="font-family:'Special Elite',monospace;font-size:8px;color:var(--muted);letter-spacing:.12em;margin-bottom:5px">TEXT & LINES</div>
+          <div class="decor-grid">
             <button class="decor-btn" onclick="addDecor('divider')"><span class="di">✦</span>DIVIDER</button>
             <button class="decor-btn" onclick="addDecor('text')"><span class="di">✍</span>TEXT</button>
+            <button class="decor-btn" onclick="addDecor('date-stamp')"><span class="di">📅</span>DATE</button>
           </div>
         </div>
       </div>
@@ -1162,8 +1185,12 @@ const PRESET_VOICE = {
   summer:       "Write with sun-bleached nostalgia — a perfect afternoon, faded and bittersweet.",
   moody:        "Write with cinematic introspection — rain, ink, quiet sadness that feels like a gift.",
 };
-const BOTANICALS = ['🌿','🍃','🌾','🍂','🌸','🌺','🌻','🌹','🍀','🌵'];
-const STAMPS = ['PASSED','RECEIVED','FRAGILE','SPECIAL','MEMORIES','FOUND','RARE','ARCHIVAL'];
+const BOTANICALS = ['🌿','🍃','🌾','🍂','🌸','🌺','🌻','🌹','🍀','🌵','🪷','🫧','🌼','🪻','🍁','🪨','🌱','🫚','🌙','⭐'];
+const HEARTS    = ['🤍','🖤','🤎','💛','🧡','💜','💙','❤','🫶','♡'];
+const NUMBERS   = ['No. 1','No. 2','No. 3','Vol. I','Vol. II','Vol. III','§ 1','§ 2','§ 3'];
+const CORNERS   = ['corner','corner','corner','corner']; // decorative corner type
+const STICKERS  = ['✦','✧','❋','❊','✿','❀','✾','❁','✽','❃','✼','❇','✻','✺','✹','✸'];
+const STAMPS = ['PASSED','RECEIVED','FRAGILE','SPECIAL','MEMORIES','FOUND','RARE','ARCHIVAL','LOVE','URGENT','PERSONAL','KEEP','HOLD','PRIVATE','HANDLED WITH CARE','NOT FORGOTTEN'];
 const COVER_PATS = [
   'repeating-linear-gradient(45deg,rgba(255,255,255,.07) 0,rgba(255,255,255,.07) 2px,transparent 2px,transparent 12px)',
   'repeating-linear-gradient(135deg,rgba(255,255,255,.05) 0,rgba(255,255,255,.05) 1px,transparent 1px,transparent 8px)',
@@ -1725,32 +1752,196 @@ function mkInp(cls,ph,val,field){
 function makeDecorEl(d){
   const rng=mkRng(strHash(d.id));
   const page=document.getElementById('jpage');
+
+  // Outer wrapper — holds position on the page
   const wrap=document.createElement('div');
   wrap.dataset.did=d.id;
-  wrap.style.cssText=`position:absolute;left:${d.x}%;top:${d.y}%;transform:rotate(${d.rot||0}deg);z-index:20;cursor:grab;user-select:none;touch-action:none`;
+  wrap.style.cssText=`position:absolute;left:${d.x}%;top:${d.y}%;z-index:20;user-select:none;touch-action:none`;
+
+  // Inner rotator — handles rotation independently of position
+  const rotator=document.createElement('div');
+  rotator.style.cssText=`transform:rotate(${d.rot||0}deg);position:relative;display:inline-block;cursor:grab`;
+
+  // ── DELETE button (top-right) ─────────────────────────────────────────────
   const del=document.createElement('button');del.textContent='✕';del.title='Remove';
-  del.style.cssText='position:absolute;top:-8px;right:-8px;width:18px;height:18px;border-radius:50%;background:var(--rust);color:var(--cream);border:none;font-size:9px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:30;line-height:1;padding:0';
+  del.style.cssText='position:absolute;top:-10px;right:-10px;width:20px;height:20px;border-radius:50%;background:#c0392b;color:#fff;border:2px solid #fff;font-size:9px;cursor:pointer;display:none;align-items:center;justify-content:center;z-index:40;line-height:1;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.4)';
   del.onclick=e=>{e.stopPropagation();rmDecor(d.id);};
-  wrap.appendChild(del);
-  wrap.addEventListener('mouseenter',()=>del.style.display='flex');
-  wrap.addEventListener('mouseleave',()=>del.style.display='none');
+
+  // ── ROTATE handle (bottom-right, curved arrow) ────────────────────────────
+  const rotHandle=document.createElement('button');
+  rotHandle.title='Drag to rotate';
+  rotHandle.innerHTML='↻';
+  rotHandle.style.cssText='position:absolute;bottom:-12px;right:-12px;width:22px;height:22px;border-radius:50%;background:#2c6fad;color:#fff;border:2px solid #fff;font-size:12px;cursor:grab;display:none;align-items:center;justify-content:center;z-index:40;line-height:1;padding:0;box-shadow:0 2px 6px rgba(0,0,0,.4)';
+
+  // Show/hide controls on hover — bright white outline on the rotator for visibility on dark photos
+  wrap.addEventListener('mouseenter',()=>{
+    del.style.display='flex';
+    rotHandle.style.display='flex';
+    rotator.style.outline='2px dashed rgba(255,255,255,0.85)';
+    rotator.style.outlineOffset='4px';
+  });
+  wrap.addEventListener('mouseleave',()=>{
+    del.style.display='none';
+    rotHandle.style.display='none';
+    rotator.style.outline='none';
+  });
+
+  // ── BUILD INNER CONTENT ───────────────────────────────────────────────────
   const inner=document.createElement('div');
-  const tapeColors={'tape-floral':'rgba(182,140,168,.7)','tape-stripe':'rgba(155,178,140,.7)','tape-kraft':'rgba(196,168,140,.72)'};
-  if(tapeColors[d.type]){inner.style.cssText=`width:90px;height:24px;background-color:${tapeColors[d.type]};background-image:repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.28) 4px,rgba(255,255,255,.28) 5px);box-shadow:0 2px 6px rgba(0,0,0,.15)`;}
-  else if(d.type==='postmark'){inner.style.cssText='width:52px;height:52px;border-radius:50%;border:2.5px solid rgba(100,28,28,.55);outline:1.2px solid rgba(100,28,28,.35);outline-offset:-6px;display:flex;align-items:center;justify-content:center;font-family:\'Special Elite\',monospace;font-size:6.5px;color:rgba(100,28,28,.7);text-align:center;line-height:1.4;background:rgba(253,245,228,.6)';inner.innerHTML='PAPERLY<br>'+['🌿','⚓','✈','📜','🔭'][Math.floor(rng()*5)]+'<br>'+new Date().getFullYear();}
-  else if(d.type==='botanical'){inner.style.cssText='font-size:34px;line-height:1;filter:sepia(.25)';inner.textContent=BOTANICALS[Math.floor(rng()*BOTANICALS.length)];}
-  else if(d.type==='stamp'){inner.style.cssText='font-family:\'Special Elite\',monospace;font-size:11px;color:rgba(139,26,26,.68);border:2.5px solid rgba(139,26,26,.52);padding:3px 10px;letter-spacing:.13em;background:rgba(253,245,228,.55)';inner.textContent=STAMPS[Math.floor(rng()*STAMPS.length)];}
-  else if(d.type==='divider'){inner.style.cssText='font-family:\'Special Elite\',monospace;font-size:10px;color:var(--muted);letter-spacing:.35em;white-space:nowrap;padding:2px 4px';inner.textContent='— ✦ ✦ ✦ —';}
-  else if(d.type==='text'){inner.contentEditable='true';inner.style.cssText='font-family:Caveat,cursive;font-size:17px;color:var(--sepia);font-style:italic;min-width:80px;min-height:24px;outline:none;border-bottom:1px dashed rgba(160,128,80,.35);padding:1px 2px';inner.textContent=d.content||'write here…';inner.onblur=()=>{d.content=inner.textContent;save();};inner.onmousedown=e=>e.stopPropagation();}
-  wrap.appendChild(inner);
+  const tapeColors={
+    'tape-floral':'rgba(182,140,168,.82)',
+    'tape-stripe':'rgba(155,178,140,.82)',
+    'tape-kraft':'rgba(196,168,140,.88)',
+    'tape-lace':  'rgba(240,230,210,.75)',
+    'tape-grid':  'rgba(160,180,200,.78)',
+    'tape-gold':  'rgba(210,180,80,.80)',
+  };
+  if(tapeColors[d.type]){
+    const isLace=d.type==='tape-lace';
+    const isGold=d.type==='tape-gold';
+    const isGrid=d.type==='tape-grid';
+    let bgImg=isLace
+      ? 'repeating-linear-gradient(90deg,transparent,transparent 6px,rgba(255,255,255,.35) 6px,rgba(255,255,255,.35) 7px),repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(255,255,255,.2) 3px,rgba(255,255,255,.2) 4px)'
+      : isGold
+        ? 'repeating-linear-gradient(90deg,transparent,transparent 3px,rgba(255,255,255,.22) 3px,rgba(255,255,255,.22) 4px),repeating-linear-gradient(0deg,rgba(255,220,80,.12),rgba(255,220,80,.12) 1px,transparent 1px,transparent 100%)'
+        : isGrid
+          ? 'repeating-linear-gradient(90deg,rgba(255,255,255,.25) 0,rgba(255,255,255,.25) 1px,transparent 1px,transparent 8px),repeating-linear-gradient(0deg,rgba(255,255,255,.25) 0,rgba(255,255,255,.25) 1px,transparent 1px,transparent 8px)'
+          : 'repeating-linear-gradient(90deg,transparent,transparent 4px,rgba(255,255,255,.28) 4px,rgba(255,255,255,.28) 5px)';
+    inner.style.cssText=`width:96px;height:26px;background-color:${tapeColors[d.type]};background-image:${bgImg};box-shadow:0 2px 8px rgba(0,0,0,.22)`;
+  }
+  else if(d.type==='postmark'){
+    const icons=['🌿','⚓','✈','📜','🔭','🌸','🦋','🪶','⚜','🔮'];
+    inner.style.cssText='width:56px;height:56px;border-radius:50%;border:2.5px solid rgba(100,28,28,.6);outline:1.2px solid rgba(100,28,28,.4);outline-offset:-7px;display:flex;align-items:center;justify-content:center;font-family:\'Special Elite\',monospace;font-size:6.5px;color:rgba(100,28,28,.75);text-align:center;line-height:1.5;background:rgba(253,245,228,.72);box-shadow:0 2px 8px rgba(0,0,0,.18)';
+    inner.innerHTML='PAPERLY<br>'+icons[Math.floor(rng()*icons.length)]+'<br>'+new Date().getFullYear();
+  }
+  else if(d.type==='botanical'){
+    inner.style.cssText='font-size:36px;line-height:1;filter:sepia(.2);text-shadow:0 2px 8px rgba(0,0,0,.3)';
+    inner.textContent=BOTANICALS[Math.floor(rng()*BOTANICALS.length)];
+  }
+  else if(d.type==='heart'){
+    inner.style.cssText='font-size:32px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.25)';
+    inner.textContent=HEARTS[Math.floor(rng()*HEARTS.length)];
+  }
+  else if(d.type==='star'){
+    inner.style.cssText='font-size:28px;line-height:1;color:rgba(200,170,60,.9);text-shadow:0 2px 8px rgba(0,0,0,.3)';
+    inner.textContent=STICKERS[Math.floor(rng()*STICKERS.length)];
+  }
+  else if(d.type==='moon'){
+    inner.style.cssText='font-size:32px;line-height:1;text-shadow:0 2px 8px rgba(0,0,0,.3)';
+    inner.textContent='🌙';
+  }
+  else if(d.type==='feather'){
+    inner.style.cssText='font-size:34px;line-height:1;filter:sepia(.3);text-shadow:0 2px 8px rgba(0,0,0,.3)';
+    inner.textContent='🪶';
+  }
+  else if(d.type==='butterfly'){
+    inner.style.cssText='font-size:34px;line-height:1;filter:sepia(.15);text-shadow:0 2px 8px rgba(0,0,0,.25)';
+    inner.textContent='🦋';
+  }
+  else if(d.type==='stamp'){
+    inner.style.cssText='font-family:\'Special Elite\',monospace;font-size:11px;color:rgba(139,26,26,.8);border:2.5px solid rgba(139,26,26,.6);padding:4px 11px;letter-spacing:.13em;background:rgba(253,245,228,.82);box-shadow:0 2px 8px rgba(0,0,0,.2)';
+    inner.textContent=STAMPS[Math.floor(rng()*STAMPS.length)];
+  }
+  else if(d.type==='number'){
+    inner.style.cssText='font-family:\'Special Elite\',monospace;font-size:13px;color:rgba(80,50,20,.8);border:2px solid rgba(80,50,20,.45);padding:3px 10px;letter-spacing:.1em;background:rgba(253,245,228,.82);box-shadow:0 2px 6px rgba(0,0,0,.15)';
+    inner.textContent=NUMBERS[Math.floor(rng()*NUMBERS.length)];
+  }
+  else if(d.type==='ticket'){
+    const rng2=mkRng(strHash(d.id+'tk'));
+    const tNum=String(100+Math.floor(rng2()*900));
+    inner.style.cssText='font-family:\'Special Elite\',monospace;font-size:9px;color:rgba(40,40,80,.8);border:1.5px dashed rgba(40,40,80,.45);padding:5px 10px;letter-spacing:.08em;background:rgba(245,248,253,.88);line-height:1.7;box-shadow:0 2px 8px rgba(0,0,0,.18);min-width:90px;text-align:center';
+    inner.innerHTML='ADMIT ONE<br><span style="font-size:14px;letter-spacing:.2em">'+tNum+'</span>';
+  }
+  else if(d.type==='label'){
+    inner.style.cssText='font-family:\'Special Elite\',monospace;font-size:9px;color:rgba(80,60,30,.8);border:1.5px solid rgba(140,110,60,.5);padding:4px 10px 4px 8px;letter-spacing:.1em;background:rgba(253,248,230,.9);box-shadow:0 2px 6px rgba(0,0,0,.15);position:relative;clip-path:polygon(0 0,calc(100% - 10px) 0,100% 50%,calc(100% - 10px) 100%,0 100%)';
+    inner.textContent=d.content||'MEMORY';
+    inner.contentEditable='true';
+    inner.onblur=()=>{d.content=inner.textContent;save();};
+    inner.onmousedown=e=>e.stopPropagation();
+  }
+  else if(d.type==='corner'){
+    inner.style.cssText='width:32px;height:32px;border-top:3px solid rgba(100,70,30,.7);border-left:3px solid rgba(100,70,30,.7);opacity:.75';
+  }
+  else if(d.type==='date-stamp'){
+    const now=new Date();
+    const months=['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    inner.style.cssText='font-family:\'Special Elite\',monospace;font-size:8px;color:rgba(100,28,28,.75);border:2px solid rgba(100,28,28,.5);padding:4px 8px;text-align:center;line-height:1.6;background:rgba(253,245,228,.8);letter-spacing:.08em;box-shadow:0 2px 6px rgba(0,0,0,.15)';
+    inner.innerHTML=months[now.getMonth()]+'<br><span style="font-size:16px;letter-spacing:.04em">'+now.getDate()+'</span><br>'+now.getFullYear();
+  }
+  else if(d.type==='divider'){
+    inner.style.cssText='font-family:\'Special Elite\',monospace;font-size:10px;color:rgba(120,90,50,.8);letter-spacing:.35em;white-space:nowrap;padding:2px 6px;text-shadow:0 1px 3px rgba(0,0,0,.2)';
+    inner.textContent='— ✦ ✦ ✦ —';
+  }
+  else if(d.type==='text'){
+    inner.contentEditable='true';
+    inner.style.cssText='font-family:Caveat,cursive;font-size:18px;color:var(--sepia);font-style:italic;min-width:90px;min-height:26px;outline:none;border-bottom:1.5px dashed rgba(160,128,80,.5);padding:1px 3px;text-shadow:0 1px 4px rgba(255,255,255,.5)';
+    inner.textContent=d.content||'write here…';
+    inner.onblur=()=>{d.content=inner.textContent;save();};
+    inner.onmousedown=e=>e.stopPropagation();
+  }
+
+  rotator.appendChild(inner);
+  rotator.appendChild(del);
+  rotator.appendChild(rotHandle);
+  wrap.appendChild(rotator);
+
+  // ── DRAG (move position) ──────────────────────────────────────────────────
   let dragging=false,startX,startY,startLeft,startTop;
-  function dragStart(cx,cy){dragging=true;wrap.style.cursor='grabbing';wrap.style.zIndex='50';startX=cx;startY=cy;const r=page.getBoundingClientRect();startLeft=d.x/100*r.width;startTop=d.y/100*r.height;}
-  function dragMove(cx,cy){if(!dragging)return;const r=page.getBoundingClientRect();d.x=(Math.max(0,Math.min(r.width-10,startLeft+cx-startX))/r.width)*100;d.y=(Math.max(0,Math.min(r.height-10,startTop+cy-startY))/r.height)*100;wrap.style.left=d.x+'%';wrap.style.top=d.y+'%';}
-  function dragEnd(){if(!dragging)return;dragging=false;wrap.style.cursor='grab';wrap.style.zIndex='20';save();}
-  wrap.addEventListener('mousedown',e=>{if(e.target===del)return;e.preventDefault();dragStart(e.clientX,e.clientY);const mm=e=>dragMove(e.clientX,e.clientY);const mu=()=>{dragEnd();window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);};window.addEventListener('mousemove',mm);window.addEventListener('mouseup',mu);});
-  wrap.addEventListener('touchstart',e=>{if(e.target===del)return;const t=e.touches[0];dragStart(t.clientX,t.clientY);},{passive:true});
-  wrap.addEventListener('touchmove',e=>{const t=e.touches[0];dragMove(t.clientX,t.clientY);e.preventDefault();},{passive:false});
-  wrap.addEventListener('touchend',dragEnd);
+  function dragStart(cx,cy){
+    dragging=true;rotator.style.cursor='grabbing';wrap.style.zIndex='50';
+    startX=cx;startY=cy;
+    const r=page.getBoundingClientRect();
+    startLeft=d.x/100*r.width;startTop=d.y/100*r.height;
+  }
+  function dragMove(cx,cy){
+    if(!dragging)return;
+    const r=page.getBoundingClientRect();
+    d.x=(Math.max(0,Math.min(r.width-10,startLeft+cx-startX))/r.width)*100;
+    d.y=(Math.max(0,Math.min(r.height-10,startTop+cy-startY))/r.height)*100;
+    wrap.style.left=d.x+'%';wrap.style.top=d.y+'%';
+  }
+  function dragEnd(){
+    if(!dragging)return;
+    dragging=false;rotator.style.cursor='grab';wrap.style.zIndex='20';save();
+  }
+  rotator.addEventListener('mousedown',e=>{
+    if(e.target===del||e.target===rotHandle||e.target===inner&&inner.contentEditable==='true')return;
+    e.preventDefault();dragStart(e.clientX,e.clientY);
+    const mm=ev=>dragMove(ev.clientX,ev.clientY);
+    const mu=()=>{dragEnd();window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);};
+    window.addEventListener('mousemove',mm);window.addEventListener('mouseup',mu);
+  });
+  rotator.addEventListener('touchstart',e=>{
+    if(e.target===del||e.target===rotHandle)return;
+    const t=e.touches[0];dragStart(t.clientX,t.clientY);
+  },{passive:true});
+  rotator.addEventListener('touchmove',e=>{
+    const t=e.touches[0];dragMove(t.clientX,t.clientY);e.preventDefault();
+  },{passive:false});
+  rotator.addEventListener('touchend',dragEnd);
+
+  // ── ROTATE HANDLE drag ────────────────────────────────────────────────────
+  rotHandle.addEventListener('mousedown',e=>{
+    e.stopPropagation();e.preventDefault();
+    rotHandle.style.cursor='grabbing';
+    const r=rotator.getBoundingClientRect();
+    const cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const startAngle=Math.atan2(e.clientY-cy,e.clientX-cx)*(180/Math.PI)-(d.rot||0);
+    function onMove(ev){
+      const angle=Math.atan2(ev.clientY-cy,ev.clientX-cx)*(180/Math.PI)-startAngle;
+      // Snap to 15° increments when holding Shift
+      d.rot=ev.shiftKey?Math.round(angle/15)*15:Math.round(angle*10)/10;
+      rotator.style.transform='rotate('+d.rot+'deg)';
+    }
+    function onUp(){
+      rotHandle.style.cursor='grab';save();
+      window.removeEventListener('mousemove',onMove);
+      window.removeEventListener('mouseup',onUp);
+    }
+    window.addEventListener('mousemove',onMove);
+    window.addEventListener('mouseup',onUp);
+  });
+
   return wrap;
 }
 
@@ -1799,9 +1990,12 @@ function addDecor(type){
   if(S.isDemo){toast('Switch to your own journal to add ephemera');return;}
   const p=getP();if(!p)return;if(!p.decorations)p.decorations=[];
   const rng=mkRng(strHash(type+Date.now()));
-  const x=10+rng()*55,y=5+rng()*35,rot=(rng()-.5)*16;
+  const x=12+rng()*50, y=8+rng()*30;
+  // Wider rotation range; tapes get small tilts, stamps/marks get more
+  const isTape=type.startsWith('tape');
+  const rot=isTape?(rng()-.5)*10:(rng()-.5)*28;
   p.decorations.push({id:gid(),type,x,y,rot,content:''});
-  save();renderPage();toast('Drag to position ✦');
+  save();renderPage();toast('Drag to reposition · drag ↻ to rotate');
 }
 
 // ─── AI (OpenAI GPT-4o) ─────────────────────────────
@@ -2213,7 +2407,7 @@ function renderDemoPage(idx){
   content.appendChild(nav);
   if(idx===DEMO_PAGES.length-1){
     const cta=document.createElement('div');cta.style.cssText='margin-top:20px;padding:20px;background:rgba(44,26,14,.06);border:1px solid rgba(196,168,100,.2);text-align:center';
-    cta.innerHTML='<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:18px;color:var(--brown);margin-bottom:8px">Begin your own collection</div><div style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:13px;color:var(--sepia);margin-bottom:14px;line-height:1.6">Upload any photo. Claude writes the words. Every memory, made beautiful.</div><button class="modal-btn-p" style="margin:0 auto" onclick="showLib();setTimeout(()=>currentUser?showNewModal():openModal(\'m-auth\'),100)">+ Start my journal</button>';
+    cta.innerHTML='<div style="font-family:\'Cormorant Garamond\',serif;font-style:italic;font-size:18px;color:var(--brown);margin-bottom:8px">Begin your own collection</div><div style="font-family:\'Crimson Pro\',serif;font-style:italic;font-size:13px;color:var(--sepia);margin-bottom:14px;line-height:1.6">Upload any photo. GPT-4o writes the words. Every memory, made beautiful.</div><button class="modal-btn-p" style="margin:0 auto" onclick="showLib();setTimeout(()=>currentUser?showNewModal():openModal(\'m-auth\'),100)">+ Start my journal</button>';
     content.appendChild(cta);
   }
   document.getElementById('layer-list').innerHTML='<div style="font-family:Caveat,cursive;font-size:12px;color:var(--muted)">Demo — no layers</div>';
@@ -2266,7 +2460,7 @@ function clearApiKey() {
 function loadApiKeyInput() {
   const hasKey = !!sessionStorage.getItem('paperly_api_key');
   const inp = document.getElementById('api-key-inp');
-  if (inp) { inp.value = ''; inp.placeholder = hasKey ? '●●●●●● (key saved — paste new to replace)' : 'sk-ant-…'; }
+  if (inp) { inp.value = ''; inp.placeholder = hasKey ? '●●●●●● (key saved — paste new to replace)' : 'sk-…'; }
   if (hasKey) _setApiKeyStatus('KEY SET ✓', '#5a8a5a', true);
 }
 
