@@ -1015,16 +1015,23 @@ window.__supabaseStub = {
         <div class="psec" id="api-key-sec">
           <div class="ptitle">🔑 CLAUDE API KEY</div>
           <div style="font-family:'Crimson Pro',serif;font-style:italic;font-size:12px;color:var(--sepia);margin-bottom:8px;line-height:1.6">Required for AI suggestions. Get yours at <strong>console.anthropic.com</strong>.<br>Key is kept only for this session and never displayed back.</div>
-          <div style="position:relative;margin-bottom:6px">
+          <div style="display:flex;gap:5px;margin-bottom:6px;align-items:stretch">
             <input id="api-key-inp" type="password" class="finput" placeholder="sk-ant-…"
               autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-              style="font-size:13px;font-family:'Special Elite',monospace;letter-spacing:.04em;padding-right:36px;width:100%;box-sizing:border-box;-webkit-text-security:disc"
-              oninput="saveApiKey(this.value)" value="">
-            <button onclick="(function(){var i=document.getElementById('api-key-inp');i.type=i.type==='password'?'text':'password';})()" 
-              style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:14px;color:var(--muted);padding:2px 4px" 
-              type="button" title="Show/hide key">👁</button>
+              style="font-size:13px;font-family:'Special Elite',monospace;letter-spacing:.04em;flex:1;margin-bottom:0;min-width:0"
+              onkeydown="if(event.key==='Enter')commitApiKey()"
+              value="">
+            <button onclick="commitApiKey()"
+              style="flex-shrink:0;padding:0 11px;background:var(--rust);color:var(--cream);border:none;cursor:pointer;font-family:'Special Elite',monospace;font-size:10px;letter-spacing:.06em;white-space:nowrap"
+              type="button">SAVE</button>
           </div>
-          <div id="api-key-status" style="font-family:'Special Elite',monospace;font-size:9px;color:var(--muted);letter-spacing:.06em;min-height:14px"></div>
+          <div id="api-key-status" style="font-family:'Special Elite',monospace;font-size:9px;color:var(--muted);letter-spacing:.06em;min-height:14px;display:flex;align-items:center;justify-content:space-between">
+            <span id="api-key-status-text"></span>
+            <button id="api-key-clear" onclick="clearApiKey()" type="button"
+              style="display:none;background:none;border:none;cursor:pointer;font-family:'Special Elite',monospace;font-size:8.5px;color:var(--muted);letter-spacing:.05em;padding:0">
+              CLEAR KEY ✕
+            </button>
+          </div>
         </div>
         <div class="psec">
           <div class="ptitle">✂ MEMORY SCRAP</div>
@@ -2213,37 +2220,58 @@ function renderDemoPage(idx){
 }
 
 // ─── API KEY ──────────────────────────────────────
-// API key is stored in sessionStorage (cleared on tab close) and never
-// displayed back in the input — only a masked placeholder is shown.
-function saveApiKey(val) {
-  const v = val.trim();
-  const status = document.getElementById('api-key-status');
+// ─── API KEY (session-only, never shown back in the input) ───────────────────
+// Key is stored in sessionStorage only — cleared automatically when tab closes.
+// The input field is used only for entry; the key is never read back into it.
+
+function _setApiKeyStatus(msg, color, showClear) {
+  const t = document.getElementById('api-key-status-text');
+  const c = document.getElementById('api-key-clear');
+  if (t) { t.textContent = msg; t.style.color = color || 'var(--muted)'; }
+  if (c) c.style.display = showClear ? 'inline-block' : 'none';
+}
+
+function commitApiKey() {
   const inp = document.getElementById('api-key-inp');
-  if (v) {
-    // Only store if it looks like a real key (starts with sk-ant-)
-    if (!v.startsWith('sk-')) {
-      if (status) { status.textContent = 'KEY MUST START WITH sk-'; status.style.color = '#8b1a1a'; }
-      return;
-    }
-    sessionStorage.setItem('paperly_api_key', v);
-    // Clear the visible field and show a placeholder so the key is never displayed
-    if (inp) { inp.value = ''; inp.placeholder = '●●●●●●●● (key set — paste new to replace)'; }
-    if (status) { status.textContent = 'KEY SAVED FOR THIS SESSION ✓'; status.style.color = '#5a8a5a'; }
-    setTimeout(() => { if (status) status.textContent = ''; }, 3000);
-  } else {
-    sessionStorage.removeItem('paperly_api_key');
-    if (inp) { inp.placeholder = 'sk-ant-…'; }
-    if (status) { status.textContent = 'KEY CLEARED'; status.style.color = 'var(--muted)'; }
+  if (!inp) return;
+  const v = inp.value.trim();
+  if (!v) {
+    // Empty submit — just show current status
+    const hasKey = !!sessionStorage.getItem('paperly_api_key');
+    if (hasKey) _setApiKeyStatus('KEY ALREADY SET ✓', '#5a8a5a', true);
+    else _setApiKeyStatus('PASTE YOUR KEY ABOVE', '#8b1a1a', false);
+    return;
   }
+  if (!v.startsWith('sk-')) {
+    _setApiKeyStatus('KEY MUST START WITH sk-  —  check and paste again', '#8b1a1a', false);
+    inp.focus(); inp.select();
+    return;
+  }
+  sessionStorage.setItem('paperly_api_key', v);
+  // Clear the field immediately so the key is never sitting visible
+  inp.value = '';
+  inp.placeholder = '●●●●●● (key saved — paste new to replace)';
+  _setApiKeyStatus('KEY SAVED FOR THIS SESSION ✓', '#5a8a5a', true);
+  // Dismiss the status message after 4s but keep the clear button
+  setTimeout(() => _setApiKeyStatus('', 'var(--muted)', true), 4000);
 }
-function loadApiKeyInput() {
-  // Never pre-fill the input — just show status if a key exists in sessionStorage
-  const status = document.getElementById('api-key-status');
+
+function clearApiKey() {
+  sessionStorage.removeItem('paperly_api_key');
   const inp = document.getElementById('api-key-inp');
-  const hasKey = !!sessionStorage.getItem('paperly_api_key');
-  if (inp) { inp.value = ''; inp.placeholder = hasKey ? '●●●●●●●● (key set — paste new to replace)' : 'sk-ant-…'; }
-  if (status && hasKey) { status.textContent = 'KEY SET ✓'; status.style.color = '#5a8a5a'; }
+  if (inp) { inp.value = ''; inp.placeholder = 'sk-ant-…'; inp.focus(); }
+  _setApiKeyStatus('KEY CLEARED', 'var(--muted)', false);
 }
+
+function loadApiKeyInput() {
+  const hasKey = !!sessionStorage.getItem('paperly_api_key');
+  const inp = document.getElementById('api-key-inp');
+  if (inp) { inp.value = ''; inp.placeholder = hasKey ? '●●●●●● (key saved — paste new to replace)' : 'sk-ant-…'; }
+  if (hasKey) _setApiKeyStatus('KEY SET ✓', '#5a8a5a', true);
+}
+
+// Keep saveApiKey as no-op so any stale references don't crash
+function saveApiKey() {}
 
 // ─── INIT ─────────────────────────────────────────
 (function init(){
